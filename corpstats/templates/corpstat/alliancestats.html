@@ -1,0 +1,78 @@
+{% extends 'corpstat/base.html' %}
+{% load i18n %}
+{% load humanize %}
+{% block member_data %}
+    <div class="row">
+        <div class="col-lg-12 text-center">
+            <table class="table">
+                <tr>
+                    <td class="text-center col-lg-6 col-lg-offset-3">
+                        <img class="ra-avatar" src="{{ logo_url }}">
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center"><h4>{{ alliance_name }}</h4></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <b>{% trans "Mains" %}:</b> {{ mains }} <b>{% trans 'Alts' %}:</b> {{ alts }}<br>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" aria-valuenow="{{ registered }}" aria-valuemin="0"
+                     aria-valuemax="{{ members }}" style="width: {% widthratio registered|add:"1" members 100 %}%; border:1px;">
+                    <span>{{ registered }}/{{ members }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% for cs in corpstats %}
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                        <div class="pull-left">
+                            <h4>{{ cs.corp.corporation_name }}</h4>
+                        </div>
+                        <div class="pull-right">
+                                <a class="btn btn-success" type="button" href="{% url 'corpstat:view_corp' cs.corp.corporation_id %}" title="View">
+                                    <span class="glyphicon glyphicon-arrow-right"></span>
+                                </a>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-lg-12">
+                            <div class="col-sm-2">
+                                <div class="row">
+                                    <img class="img-responsive" src="{{ cs.corp_logo }}">
+                                </div>
+                            </div>
+                            <div class="col-sm-10">
+                                <div class="row">
+                                    <table class="table">
+                                        <tr>
+                                            <td class="text-center">{{ cs.main_count }} {% trans 'Main' %}{{ cs.main_count|pluralize }}</td>
+                                            <td class="text-center">{{ cs.alt_count }} {% trans 'Alt' %}{{ cs.alt_count|pluralize }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">{{ cs.user_count }} {% trans 'Auth User' %}{{ cs.user_count|pluralize }}</td>
+                                            <td class="text-center">{{ cs.unregistered_member_count }} {% trans 'Unregistered' %}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <br>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" aria-valuenow="{{ cs.registered_member_count }}" aria-valuemin="0"
+                                        aria-valuemax="{{ cs.registered_member_count }}" style="width: {% widthratio cs.registered_member_count cs.member_count 100 %}%;">
+                                        <span>{{ cs.registered_member_count }}/{{ cs.member_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
