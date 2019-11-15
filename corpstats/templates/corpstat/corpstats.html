@@ -194,8 +194,7 @@
                                                         <th></th>
                                                         <th class="text-center">{% trans 'Character' %}</th>
                                                         <th class="text-center">{% trans 'Ship' %}</th>
-                                                        <th class="text-center">{% trans 'Last Logon' %}</th>
-                                                        <th class="text-center">{% trans 'Last Logoff' %}</th>
+                                                        <th class="text-center">{% trans 'Last Online' %}</th>
                                                         <th class="text-center">{% trans 'Joined' %}</th>
                                                         <th class="text-center">{% trans 'Registered' %}</th>
                                                     </tr>
@@ -206,9 +205,8 @@
                                                             <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
                                                             <td class="text-center">{{ member.character_name }}</td>
                                                             <td class="text-center">{{ member.ship_type_name }}</td>
-                                                            <td class="text-center">{{ member.logon_date }}</td>
-                                                            <td class="text-center">{{ member.logoff_date }}</td>
-                                                            <td class="text-center">{{ member.start_date }}</td>
+                                                            <td class="text-center">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
+                                                            <td class="text-center">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.start_date|timesince }}</span></td>
                                                             <td class="text-center">
                                                                 <span class="glyphicon glyphicon-remove"></span>
                                                             </td>
@@ -219,9 +217,8 @@
                                                             <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
                                                             <td class="text-center">{{ member.character_name }}</td>
                                                             <td class="text-center">{{ member.ship_type_name }}</td>
-                                                            <td class="text-center">{{ member.logon_date }}</td>
-                                                            <td class="text-center">{{ member.logoff_date }}</td>
-                                                            <td class="text-center">{{ member.start_date }}</td>
+                                                            <td class="text-center">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.logon_date|timesince:member.logoff_date }}</span></td>
+                                                            <td class="text-center">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.start_date|timesince }}</span></td>
                                                             <td class="text-center">
                                                                 <span class="glyphicon glyphicon-ok"></span>
                                                             </td>
@@ -269,8 +266,8 @@
         });
         $('#table-tracking').DataTable({
             "columnDefs": [
-                { "searchable": false, "targets": [0, 6] },
-                { "sortable": false, "targets": [0, 6] },
+                { "searchable": false, "targets": [0, 5] },
+                { "sortable": false, "targets": [0, 5] },
             ],
             "order": [[ 1, "asc" ]],
         });

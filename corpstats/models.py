@@ -105,9 +105,9 @@ class CorpStat(models.Model):
         Un-registered QuerySet[CorpMember]
         """
         character_list = CorpMember.objects.filter(corpstats=self)
-        linked_chars = EveCharacter.objects.filter(
-            character_id__in=character_list.values_list('character_id', flat=True)) \
-            .select_related('character_ownership', 'character_ownership__user__profile__main_character') \
+        linked_chars = EveCharacter.objects.filter(character_id__in=character_list.values_list('character_id', flat=True))
+        linked_chars = linked_chars | EveCharacter.objects.filter( character_ownership__user__profile__main_character__corporation_id=self.corp.corporation_id)
+        linked_chars = linked_chars.select_related('character_ownership','character_ownership__user__profile__main_character') \
             .prefetch_related('character_ownership__user__character_ownerships') \
             .prefetch_related('character_ownership__user__character_ownerships__character')
 
@@ -126,7 +126,8 @@ class CorpStat(models.Model):
                         mains[main.character_id]['alts'] = []
                         mains[main.character_id]['main'] = main
                         mains[main.character_id]['alts'].append(char)
-                    members.append(char) # add to member list
+                    if char.corporation_id == self.corp.corporation_id:
+                        members.append(char) # add to member list
                     temp_ids.append(char.character_id) # ignore this char for un-reg'd
             except ObjectDoesNotExist:
                 # character has no link
