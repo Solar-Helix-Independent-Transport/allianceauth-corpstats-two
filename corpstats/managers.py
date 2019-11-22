@@ -46,7 +46,7 @@ class CorpStatManager(models.Manager):
     def alliances_visible_to(self, user):
         alliances = []
         if user.has_perm('corpstat.view_all_corpstats'):
-            alliances = set(self.visible_to(user).values_list('corp__alliance_id', 'corp__alliance__alliance_name'))
+            alliances = set(self.visible_to(user).values_list('corp__alliance__alliance_id', 'corp__alliance__alliance_name'))
         elif user.profile.main_character:
             if user.has_perm('corpstat.view_alliance_corpstats') and user.profile.main_character.alliance_id:
                 alliances.append((user.profile.main_character.alliance_id, user.profile.main_character.alliance_name))

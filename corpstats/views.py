@@ -150,6 +150,10 @@ def alliance_view(request, alliance_id=None):
     # get available models
     alliances = CorpStat.objects.alliances_visible_to(request.user)
 
+    # get default model if none requested
+    if not alliance_id:
+        alliance_id = request.user.profile.main_character.alliance_id
+
     # ensure we can see the requested model
     if alliance_id not in alliances:
         raise PermissionDenied('You do not have permission to view the selected alliance statistics module.')
@@ -158,16 +162,16 @@ def alliance_view(request, alliance_id=None):
     alliance_members = CorpMember.objects.filter(corpstats__corp__alliance_id=alliance_id)
 
     context = {
-        'available_corps': CorpStats.objects.visible_to(request.user),
+        'available_corps': CorpStat.objects.visible_to(request.user),
         'available_alliances': alliances,
         'alliance_id': alliance_id,
         'alliance_name': alliances[alliance_id],
         'corpstats': CorpStat.objects.filter(corp__alliance_id=alliance_id).order_by('corp__corporation_name'),
         'members': alliance_members.count(),
-        'registered': alliance_members.filter(registered=True).count(),
-        'unregistered': alliance_members.filter(registered=False).count(),
-        'mains': alliance_members.filter(is_main=True).count(),
-        'alts': alliance_members.filter(is_main=False).filter(main_character__isnull=False).count(),
+        'registered': alliance_members.count(),
+        'unregistered': alliance_members.count(),
+        'mains': alliance_members.count(),
+        'alts': alliance_members.count(),
         'logo_url': "https://image.eveonline.com/Alliance/%s_128.png" % alliance_id,
     }
 

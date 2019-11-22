@@ -217,7 +217,7 @@
                                                             <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
                                                             <td class="text-center">{{ member.character_name }}</td>
                                                             <td class="text-center">{{ member.ship_type_name }}</td>
-                                                            <td class="text-center">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.logon_date|timesince:member.logoff_date }}</span></td>
+                                                            <td class="text-center">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
                                                             <td class="text-center">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-default">{{ member.start_date|timesince }}</span></td>
                                                             <td class="text-center">
                                                                 <span class="glyphicon glyphicon-ok"></span>

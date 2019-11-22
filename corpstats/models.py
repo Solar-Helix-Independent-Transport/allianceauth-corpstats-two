@@ -4,6 +4,8 @@ import os
 from allianceauth.authentication.models import CharacterOwnership, UserProfile
 from bravado.exception import HTTPForbidden
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+
 from esi.errors import TokenError
 from esi.models import Token
 from allianceauth.eveonline.models import EveCorporationInfo, EveCharacter
