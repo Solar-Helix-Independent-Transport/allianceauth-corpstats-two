@@ -1,6 +1,8 @@
 import os
 from setuptools import find_packages, setup
-
+install_requires = [
+    'allianceauth',
+]
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
 
@@ -11,6 +13,7 @@ setup(
     version='0.0.0alpha1',
     packages=find_packages(),
     include_package_data=True,
+    install_requires=install_requires,
     license='GNU General Public License v3 (GPLv3)',
     description='Alliance Auth Plugin',
     long_description=README,
