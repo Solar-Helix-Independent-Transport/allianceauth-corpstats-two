@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
+from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from esi.decorators import token_required
@@ -152,27 +153,44 @@ def alliance_view(request, alliance_id=None):
 
     # get default model if none requested
     if not alliance_id:
-        alliance_id = request.user.profile.main_character.alliance_id
-
+        alliance_id = request.user.profile.main_character.alliance.alliance_id
+    """
     # ensure we can see the requested model
     if alliance_id not in alliances:
         raise PermissionDenied('You do not have permission to view the selected alliance statistics module.')
-
+    """
+    corpstats_temp = CorpMember.objects.values('corpstats__corp__corporation_name').annotate(total_members=Count('character_id')).order_by('corpstats__corp__corporation_name') 
+    corp_totals={}
+    for stat in corpstats_temp:
+        corp_totals[stat['corpstats__corp__corporation_name']]=stat['total_members']
     # it's a lot easier to count member objects directly than try to walk reverse relations
-    alliance_members = CorpMember.objects.filter(corpstats__corp__alliance_id=alliance_id)
+    alliance_members = EveCharacter.objects.filter(character_ownership__user__profile__main_character__alliance_id=alliance_id).filter(alliance_id=alliance_id)
+    corp_breakdown = {}
+    
+    for member in alliance_members:
+        if member.corporation_name not in corp_breakdown:
+            corp_breakdown[member.corporation_name] = {}
+            corp_breakdown[member.corporation_name]['mains'] = 0
+            corp_breakdown[member.corporation_name]['alts'] = 0
+            corp_breakdown[member.corporation_name]['members'] = 0
+            try: 
+                corp_breakdown[member.corporation_name]['total'] = corp_totals[member.corporation_name]
+            except:
+                pass
+
+        if member.character_ownership.user.profile.main_character == member:
+            corp_breakdown[member.corporation_name]['mains'] += 1
+        else:
+            corp_breakdown[member.corporation_name]['alts'] += 1 
+        corp_breakdown[member.corporation_name]['members'] += 1
+
 
     context = {
         'available_corps': CorpStat.objects.visible_to(request.user),
         'available_alliances': alliances,
         'alliance_id': alliance_id,
         'alliance_name': alliances[alliance_id],
-        'corpstats': CorpStat.objects.filter(corp__alliance_id=alliance_id).order_by('corp__corporation_name'),
-        'members': alliance_members.count(),
-        'registered': alliance_members.count(),
-        'unregistered': alliance_members.count(),
-        'mains': alliance_members.count(),
-        'alts': alliance_members.count(),
-        'logo_url': "https://image.eveonline.com/Alliance/%s_128.png" % alliance_id,
+        'corp_breakdown': corp_breakdown
     }
 
     return render(request, 'corpstat/alliancestats.html', context=context)

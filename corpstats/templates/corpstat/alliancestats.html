@@ -7,7 +7,7 @@
             <table class="table">
                 <tr>
                     <td class="text-center col-lg-6 col-lg-offset-3">
-                        <img class="ra-avatar" src="{{ logo_url }}">
+                        <img class="ra-avatar" src="https://image.eveonline.com/Alliance/{{alliance_id}}_128.png">
                     </td>
                 </tr>
                 <tr>
@@ -16,63 +16,29 @@
             </table>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <b>{% trans "Mains" %}:</b> {{ mains }} <b>{% trans 'Alts' %}:</b> {{ alts }}<br>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" aria-valuenow="{{ registered }}" aria-valuemin="0"
-                     aria-valuemax="{{ members }}" style="width: {% widthratio registered|add:"1" members 100 %}%; border:1px;">
-                    <span>{{ registered }}/{{ members }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% for cs in corpstats %}
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading clearfix">
-                        <div class="pull-left">
-                            <h4>{{ cs.corp.corporation_name }}</h4>
-                        </div>
-                        <div class="pull-right">
-                                <a class="btn btn-success" type="button" href="{% url 'corpstat:view_corp' cs.corp.corporation_id %}" title="View">
-                                    <span class="glyphicon glyphicon-arrow-right"></span>
-                                </a>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <div class="col-lg-12">
-                            <div class="col-sm-2">
-                                <div class="row">
-                                    <img class="img-responsive" src="{{ cs.corp_logo }}">
-                                </div>
-                            </div>
-                            <div class="col-sm-10">
-                                <div class="row">
-                                    <table class="table">
+<div class="row"><h3 class="text-center">Corporation Breakdown</h3>
+   <table class="table table-striped datatables" id="table-corps">
+   <thead><th>Corporation</th><th>Auth'd Mains</th><th>Auth'd Alts</th><th>Member Count</th><th>Registered</th></thead><tbody>
+{% for corp, cs in corp_breakdown.items %}
                                         <tr>
-                                            <td class="text-center">{{ cs.main_count }} {% trans 'Main' %}{{ cs.main_count|pluralize }}</td>
-                                            <td class="text-center">{{ cs.alt_count }} {% trans 'Alt' %}{{ cs.alt_count|pluralize }}</td>
+<td>{{corp}}</td>                                        
+    <td class="text-center">{{ cs.mains }} </td>
+                                            <td class="text-center">{{ cs.alts }}</td>
+                                            <td class="text-center">{{ cs.total }} </td>
+                                            <td class="text-center">{% if cs.total %}{% widthratio cs.members cs.total 100 %}%{% endif %} </td>
                                         </tr>
-                                        <tr>
-                                            <td class="text-center">{{ cs.user_count }} {% trans 'Auth User' %}{{ cs.user_count|pluralize }}</td>
-                                            <td class="text-center">{{ cs.unregistered_member_count }} {% trans 'Unregistered' %}</td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <br>
-                                <div class="progress">
-                                    <div class="progress-bar" role="progressbar" aria-valuenow="{{ cs.registered_member_count }}" aria-valuemin="0"
-                                        aria-valuemax="{{ cs.registered_member_count }}" style="width: {% widthratio cs.registered_member_count cs.member_count 100 %}%;">
-                                        <span>{{ cs.registered_member_count }}/{{ cs.member_count }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endfor %}
+    {% endfor %}</tbody></table></div>
+{% endblock %}
+{% block extra_javascript %}
+    {% include 'bundles/datatables-js.html' %}
+{% endblock %}
+{% block extra_script %}
+    $(document).ready(function() {
+        $('#table-corps').DataTable({
+            "order": [
+                [1, "desc"]
+            ],
+            "pageLength": 100
+        });
+    });
 {% endblock %}

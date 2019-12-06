@@ -1,0 +1,21 @@
+language: python
+sudo: false
+cache: pip
+dist: trusty
+install:
+  - pip install coveralls>=1.1 tox
+# command to run tests
+script:
+  - tox
+after_success:
+  coveralls
+matrix:
+  include:
+   - env: TOXENV=py35-dj20
+     python: '3.5'
+   - env: TOXENV=py36-dj20
+     python: '3.6'
+   - env: TOXENV=py37-dj20
+     python: '3.7'
+  allow_failures:
+  - env: TOXENV=py37-dj20
