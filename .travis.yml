@@ -9,6 +9,8 @@ script:
   - tox
 after_success:
   coveralls
+services:
+  - redis-server
 matrix:
   include:
    - env: TOXENV=py35-dj20
