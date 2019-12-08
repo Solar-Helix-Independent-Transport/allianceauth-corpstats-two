@@ -13,5 +13,5 @@ services:
   - redis-server
 matrix:
   include:
-   - env: TOXENV=py36-dj20
-     python: '3.6'
+   - env: TOXENV=py36
+     python: '3.6.7'
