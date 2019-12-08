@@ -27,7 +27,6 @@ class CorpStatsManagerTestCase(TestCase):
         cls.state = AuthUtils.create_state('test state', 500)
         AuthUtils.assign_state(cls.user, cls.state, disconnect_signals=True)
 
-
     def setUp(self):
         self.user.refresh_from_db()
         self.user.user_permissions.clear()
@@ -47,8 +46,6 @@ class CorpStatsManagerTestCase(TestCase):
 
     def test_visible_alliance(self):
         self.user.user_permissions.add(self.view_alliance_permission)
-        print(CorpStat.objects.all())
-
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
 
@@ -73,10 +70,8 @@ class CorpStatsUpdateTestCase(TestCase):
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
         cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', member_count=1)
 
-
     def setUp(self):
         self.corpstat = CorpStat.objects.get_or_create(token=self.token, corp=self.corp)[0]
-
 
     def test_can_update(self):
         self.assertTrue(self.corpstat.can_update(self.user))
@@ -87,36 +82,32 @@ class CorpStatsUpdateTestCase(TestCase):
         self.user.refresh_from_db()
         self.corpstat.token.refresh_from_db()
 
-    """
     @mock.patch('esi.clients.SwaggerClient')
     def test_update_add_member(self, SwaggerClient):
-        SwaggerClient.from_spec.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.from_spec.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [
             {'character_id': 1, 'ship_type_id': 2, 'location_id': 3, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
-        SwaggerClient.from_spec.return_value.Character.get_characters_names.return_value.result.return_value = [{'character_id': 1, 'character_name': 'test character'}]
-        SwaggerClient.from_spec.return_value.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
-        SwaggerClient.from_spec.return_value.Universe.post_universe_names.return_value.result.return_value = [{'name': 'test system'}]
+        SwaggerClient.return_value.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
+        SwaggerClient.return_value.Universe.post_universe_names.return_value.result.return_value = [{'id': 1, 'name': 'test character', 'category':'character'}]
 
         self.corpstat.update()
-        print(CorpMember.objects.all())
         self.assertTrue(CorpMember.objects.filter(character_id=1, character_name='test character', corpstats=self.corpstat).exists())
 
     @mock.patch('esi.clients.SwaggerClient')
     def test_update_remove_member(self, SwaggerClient):
         CorpMember.objects.create(character_id='2', character_name='old test character', corpstats=self.corpstat, location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
-        SwaggerClient.from_spec.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.from_spec.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [{'character_id': 1, 'ship_type_id': 2, 'location_id': 3, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
-        SwaggerClient.from_spec.return_value.Character.get_characters_names.return_value.result.return_value = [{'character_id': 1, 'character_name': 'test character'}]
-        SwaggerClient.from_spec.return_value.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
-        SwaggerClient.from_spec.return_value.Universe.post_universe_names.return_value.result.return_value = [{'name': 'test system'}]
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [{'character_id': 1, 'ship_type_id': 2, 'location_id': 3, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
+        SwaggerClient.return_value.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
+        SwaggerClient.return_value.Universe.post_universe_names.return_value.result.return_value = [{'id': 1, 'name': 'test character', 'category':'character'}]
         self.corpstat.update()
         self.assertFalse(CorpMember.objects.filter(character_id='2', corpstats=self.corpstat).exists())
 
     @mock.patch('corpstats.models.notify')
     @mock.patch('esi.clients.SwaggerClient')
     def test_update_deleted_token(self, SwaggerClient, notify):
-        SwaggerClient.from_spec.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.from_spec.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = TokenError()
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = TokenError()
         self.corpstat.update()
         self.assertFalse(CorpStat.objects.filter(corp=self.corp).exists())
         self.assertTrue(notify.called)
@@ -124,8 +115,8 @@ class CorpStatsUpdateTestCase(TestCase):
     @mock.patch('corpstats.models.notify')
     @mock.patch('esi.clients.SwaggerClient')
     def test_update_http_forbidden(self, SwaggerClient, notify):
-        SwaggerClient.from_spec.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.from_spec.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = HTTPForbidden(mock.Mock())
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = HTTPForbidden(mock.Mock())
         self.corpstat.update()
         self.assertFalse(CorpStat.objects.filter(corp=self.corp).exists())
         self.assertTrue(notify.called)
@@ -133,11 +124,11 @@ class CorpStatsUpdateTestCase(TestCase):
     @mock.patch('corpstats.models.notify')
     @mock.patch('esi.clients.SwaggerClient')
     def test_update_token_character_corp_changed(self, SwaggerClient, notify):
-        SwaggerClient.from_spec.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 3}
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 3}
         self.corpstat.update()
         self.assertFalse(CorpStat.objects.filter(corp=self.corp).exists())
         self.assertTrue(notify.called)
-    """
+
 
 class CorpStatsPropertiesTestCase(TestCase):
     @classmethod

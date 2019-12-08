@@ -55,6 +55,7 @@ class CorpStat(models.Model):
             member_id_chunks = [member_ids[i:i + 255] for i in range(0, len(member_ids), 255)]
             member_name_chunks = [c.Universe.post_universe_names(ids=id_chunk).result() for id_chunk in
                                   member_id_chunks]
+
             member_list = {t['character_id']: t for t in tracking}
             for name_chunk in member_name_chunks:
                 for name in name_chunk:
@@ -70,7 +71,6 @@ class CorpStat(models.Model):
             # purge old members
             CorpMember.objects.filter(corpstats=self).exclude(character_id__in=member_ids).delete()
 
-            print(member_list, flush=True)
             # bulk update and create new member models
             for c_id, data in member_list.items():
                 CorpMember.objects.update_or_create(character_id=c_id, corpstats=self, defaults=data)
@@ -138,9 +138,9 @@ class CorpStat(models.Model):
 
         unregistered = character_list.exclude(character_id__in=temp_ids)
         tracking = character_list.filter(character_id__in=temp_ids)
-        print(mains, flush=True)
-        print(members, flush=True)
-        print(unregistered, flush=True)
+        #print(mains, flush=True)
+        #print(members, flush=True)
+        #print(unregistered, flush=True)
 
         return mains, members, unregistered, tracking
 
