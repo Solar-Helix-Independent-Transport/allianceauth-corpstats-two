@@ -16,11 +16,12 @@ class CorpStatQuerySet(models.QuerySet):
             assert char
             # build all accepted queries
             queries = [models.Q(token__user=user)]
-            if user.has_perm('corpstat.view_corp_corpstats'):
+
+            if user.has_perm('corpstats.view_corp_corpstats'):
                 queries.append(models.Q(corp__corporation_id=char.corporation_id))
-            if user.has_perm('corpstat.view_alliance_corpstats'):
+            if user.has_perm('corpstats.view_alliance_corpstats'):
                 queries.append(models.Q(corp__alliance_id=char.alliance_id))
-            if user.has_perm('corpstat.view_state_corpstats'):
+            if user.has_perm('corpstats.view_state_corpstats'):
                 queries.append(models.Q(corp__in=user.profile.state.member_corporations.all()))
                 queries.append(models.Q(
                     corp__alliance_id__in=user.profile.state.member_alliances.all().values_list('alliance_id',
@@ -45,11 +46,11 @@ class CorpStatManager(models.Manager):
 
     def alliances_visible_to(self, user):
         alliances = []
-        if user.has_perm('corpstat.view_all_corpstats'):
+        if user.has_perm('corpstats.view_all_corpstats'):
             alliances = set(self.visible_to(user).values_list('corp__alliance__alliance_id', 'corp__alliance__alliance_name'))
         elif user.profile.main_character:
-            if user.has_perm('corpstat.view_alliance_corpstats') and user.profile.main_character.alliance_id:
+            if user.has_perm('corpstats.view_alliance_corpstats') and user.profile.main_character.alliance_id:
                 alliances.append((user.profile.main_character.alliance_id, user.profile.main_character.alliance_name))
-            if user.has_perm('corpstat.view_state_corpstats'):
+            if user.has_perm('corpstats.view_state_corpstats'):
                 alliances += [(a.alliance_id, a.alliance_name) for a in user.profile.state.member_alliances.all()]
         return {a[0]: a[1] for a in alliances}

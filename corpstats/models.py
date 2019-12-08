@@ -41,8 +41,9 @@ class CorpStat(models.Model):
             c = self.token.get_esi_client()
 
             # make sure the token owner is still in this corp
-            assert c.Character.get_characters_character_id(character_id=self.token.character_id).result()[
-                       'corporation_id'] == int(self.corp.corporation_id)
+
+            assert c.Character.get_characters_character_id(
+                character_id=self.token.character_id).result()['corporation_id'] == int(self.corp.corporation_id)
 
             # get member tracking data and retrieve member ids for translation
             tracking = c.Corporation.get_corporations_corporation_id_membertracking(corporation_id=self.corp.corporation_id).result()
@@ -144,7 +145,10 @@ class CorpStat(models.Model):
         return mains, members, unregistered, tracking
 
     def visible_to(self, user):
-        return CorpStats.objects.filter(pk=self.pk).visible_to(user).exists()
+        return CorpStat.objects.filter(pk=self.pk).visible_to(user).exists()
+
+    def can_update(self, user):
+        return self.token.user == user or self.visible_to(user)
 
     def corp_logo(self, size=128):
         return "https://image.eveonline.com/Corporation/%s_%s.png" % (self.corp.corporation_id, size)
