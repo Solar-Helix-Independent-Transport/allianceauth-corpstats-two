@@ -1,7 +1,7 @@
 [run]
 branch = True
 source =
-    allianceauth
+    corpstats
 
 omit =
     */corpstats/migrations/*
