@@ -78,6 +78,11 @@ class CorpStatsManagerTestCase(TestCase):
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertEquals(len(alliances), 0)
 
+        user.user_permissions.add(self.view_state_permission)
+        user = User.objects.get(pk=self.user.pk)
+        alliances = CorpStat.objects.alliances_visible_to(user)
+        self.assertEquals(len(alliances), 0)
+
         self.state.member_alliances.add(self.alliance)
         user.user_permissions.add(self.view_state_permission)
         user = User.objects.get(pk=self.user.pk)
