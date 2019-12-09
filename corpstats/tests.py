@@ -20,6 +20,8 @@ class CorpStatsManagerTestCase(TestCase):
         cls.user2 = AuthUtils.create_user('test2')
         AuthUtils.add_main_character(cls.user2, 'another test character', '5', corp_id='4', corp_name='another_test_corp', corp_ticker='TEST2', alliance_id='6', alliance_name='TEST2')
         cls.user2.profile.refresh_from_db()
+        cls.user3 = AuthUtils.create_user('test3')
+        cls.user2.profile.refresh_from_db()
         cls.alliance = EveAllianceInfo.objects.create(alliance_id='3', alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
         cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance=cls.alliance, member_count=1)
         cls.alliance2 = EveAllianceInfo.objects.create(alliance_id='6', alliance_name='another test alliance', alliance_ticker='TEST2', executor_corp_id='4')
@@ -46,35 +48,33 @@ class CorpStatsManagerTestCase(TestCase):
         self.state.member_alliances.clear()
         self.user.is_superuser = False
 
-    def test_visible_superuser(self):
-        self.user.is_superuser = True
-        cs = CorpStat.objects.visible_to(self.user)
-        self.assertIn(self.corpstat, cs)
-        self.assertIn(self.corpstat2, cs)
-
     def test_visible_corporation(self):
-        self.user.user_permissions.add(self.view_corp_permission)
-        cs = CorpStat.objects.visible_to(self.user)
+        user = User.objects.get(pk=self.user.pk)
+        user.user_permissions.add(self.view_corp_permission)
+        cs = CorpStat.objects.visible_to(user)
         self.assertIn(self.corpstat, cs)
         self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_alliance(self):
-        self.user.user_permissions.add(self.view_alliance_permission)
-        cs = CorpStat.objects.visible_to(self.user)
+        user = User.objects.get(pk=self.user.pk)
+        user.user_permissions.add(self.view_alliance_permission)
+        cs = CorpStat.objects.visible_to(user)
         self.assertIn(self.corpstat, cs)
         self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_state_corp_member(self):
         self.state.member_corporations.add(self.corp)
-        self.user.user_permissions.add(self.view_state_permission)
-        cs = CorpStat.objects.visible_to(self.user)
+        user = User.objects.get(pk=self.user.pk)
+        user.user_permissions.add(self.view_state_permission)
+        cs = CorpStat.objects.visible_to(user)
         self.assertIn(self.corpstat, cs)
         self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_state_alliance_member(self):
         self.state.member_alliances.add(self.alliance)
-        self.user.user_permissions.add(self.view_state_permission)
-        cs = CorpStat.objects.visible_to(self.user)
+        user = User.objects.get(pk=self.user.pk)
+        user.user_permissions.add(self.view_state_permission)
+        cs = CorpStat.objects.visible_to(user)
         self.assertIn(self.corpstat, cs)
         self.assertNotIn(self.corpstat2, cs)
 
@@ -116,6 +116,18 @@ class CorpStatsManagerTestCase(TestCase):
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertIn('3', alliances)
         self.assertNotIn('6', alliances)
+
+    def test_visible_superuser(self):
+        user = User.objects.get(pk=self.user.pk)
+        user.is_superuser = True
+        cs = CorpStat.objects.visible_to(user)
+        self.assertIn(self.corpstat, cs)
+        self.assertIn(self.corpstat2, cs)
+
+    def test_no_main_visible_superuser(self):
+        user = User.objects.get(pk=self.user3.pk)
+        alliances = CorpStat.objects.alliances_visible_to(user)
+        self.assertEquals(len(alliances), 0)
 
 class CorpStatsUpdateTestCase(TestCase):
     @classmethod
