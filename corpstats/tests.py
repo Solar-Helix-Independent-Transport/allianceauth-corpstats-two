@@ -44,33 +44,39 @@ class CorpStatsManagerTestCase(TestCase):
         self.state.refresh_from_db()
         self.state.member_corporations.clear()
         self.state.member_alliances.clear()
+        self.user.is_superuser = False
 
     def test_visible_superuser(self):
         self.user.is_superuser = True
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
+        self.assertIn(self.corpstat2, cs)
 
     def test_visible_corporation(self):
         self.user.user_permissions.add(self.view_corp_permission)
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
+        self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_alliance(self):
         self.user.user_permissions.add(self.view_alliance_permission)
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
+        self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_state_corp_member(self):
         self.state.member_corporations.add(self.corp)
         self.user.user_permissions.add(self.view_state_permission)
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
+        self.assertNotIn(self.corpstat2, cs)
 
     def test_visible_state_alliance_member(self):
         self.state.member_alliances.add(self.alliance)
         self.user.user_permissions.add(self.view_state_permission)
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
+        self.assertNotIn(self.corpstat2, cs)
 
     def test_corp_visible_alliances(self):
         user = User.objects.get(pk=self.user.pk)
