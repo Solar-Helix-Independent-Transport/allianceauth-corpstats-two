@@ -17,10 +17,18 @@ class CorpStatsManagerTestCase(TestCase):
         cls.user = AuthUtils.create_user('test')
         AuthUtils.add_main_character(cls.user, 'test character', '1', corp_id='2', corp_name='test_corp', corp_ticker='TEST', alliance_id='3', alliance_name='TEST')
         cls.user.profile.refresh_from_db()
+        cls.user2 = AuthUtils.create_user('test2')
+        AuthUtils.add_main_character(cls.user2, 'another test character', '5', corp_id='4', corp_name='another_test_corp', corp_ticker='TEST2', alliance_id='6', alliance_name='TEST2')
+        cls.user2.profile.refresh_from_db()
         cls.alliance = EveAllianceInfo.objects.create(alliance_id='3', alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
         cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance=cls.alliance, member_count=1)
+        cls.alliance2 = EveAllianceInfo.objects.create(alliance_id='6', alliance_name='another test alliance', alliance_ticker='TEST2', executor_corp_id='4')
+        cls.corp2 = EveCorporationInfo.objects.create(corporation_id='4', corporation_name='another test corp', corporation_ticker='TEST2', alliance=cls.alliance2, member_count=1)
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
         cls.corpstat = CorpStat.objects.create(corp=cls.corp, token=cls.token)
+        cls.token2 = Token.objects.create(user=cls.user2, access_token='b', character_id='5', character_name='another test character', character_owner_hash='y')
+        cls.corpstat2 = CorpStat.objects.create(corp=cls.corp2, token=cls.token2)
+        cls.view_all_corp_permission = Permission.objects.get_by_natural_key('view_all_corpstats', 'corpstats', 'corpstat')
         cls.view_corp_permission = Permission.objects.get_by_natural_key('view_corp_corpstats', 'corpstats', 'corpstat')
         cls.view_alliance_permission = Permission.objects.get_by_natural_key('view_alliance_corpstats', 'corpstats', 'corpstat')
         cls.view_state_permission = Permission.objects.get_by_natural_key('view_state_corpstats', 'corpstats', 'corpstat')
@@ -31,6 +39,8 @@ class CorpStatsManagerTestCase(TestCase):
     def setUp(self):
         self.user.refresh_from_db()
         self.user.user_permissions.clear()
+        self.user2.refresh_from_db()
+        self.user2.user_permissions.clear()
         self.state.refresh_from_db()
         self.state.member_corporations.clear()
         self.state.member_alliances.clear()
@@ -62,32 +72,44 @@ class CorpStatsManagerTestCase(TestCase):
         cs = CorpStat.objects.visible_to(self.user)
         self.assertIn(self.corpstat, cs)
 
-    def test_visible_alliances(self):
+    def test_corp_visible_alliances(self):
         user = User.objects.get(pk=self.user.pk)
         user.user_permissions.add(self.view_corp_permission)
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertEquals(len(alliances), 0)
 
-        user.user_permissions.add(self.view_alliance_permission)
+    def test_alliance_visible_alliances(self):
         user = User.objects.get(pk=self.user.pk)  # permissions cache is only cleared when retrieved fresh from db
+        user.user_permissions.add(self.view_alliance_permission)
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertIn('3', alliances)
+        self.assertNotIn('6', alliances)
 
-        user.user_permissions.clear()
+    def test_no_perms_visible_alliances(self):
         user = User.objects.get(pk=self.user.pk)
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertEquals(len(alliances), 0)
 
+    def test_empty_state_visible_alliances(self):
+        user = User.objects.get(pk=self.user.pk)
         user.user_permissions.add(self.view_state_permission)
-        user = User.objects.get(pk=self.user.pk)
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertEquals(len(alliances), 0)
 
+    def test_view_all_visible_alliances(self):
+        user = User.objects.get(pk=self.user.pk)
+        user.user_permissions.add(self.view_all_corp_permission)
+        alliances = CorpStat.objects.alliances_visible_to(user)
+        self.assertIn('3', alliances)
+        self.assertIn('6', alliances)
+
+    def test_state_visible_to(self):
+        user = User.objects.get(pk=self.user.pk)
         self.state.member_alliances.add(self.alliance)
         user.user_permissions.add(self.view_state_permission)
-        user = User.objects.get(pk=self.user.pk)
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertIn('3', alliances)
+        self.assertNotIn('6', alliances)
 
 class CorpStatsUpdateTestCase(TestCase):
     @classmethod
