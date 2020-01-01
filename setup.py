@@ -17,7 +17,9 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     description='Alliance Auth Plugin',
     long_description=README,
+    long_description_content_type="text/markdown",
     url='https://github.com/pvyParts/allianceauth-corpstats-two',
+    download_url='https://github.com/pvyParts/allianceauth-corpstats-two/archive/1.0.0.tar.gz',
     author='AaronKable',
     author_email='aaronkable@gmail.com',
     classifiers=[

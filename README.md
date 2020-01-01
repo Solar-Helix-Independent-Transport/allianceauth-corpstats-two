@@ -27,7 +27,7 @@ Active Devs:
 ## Installation
  1. Install the Repo `pip install aa-corpstats-two`
  2. Add `'corpstats',` to your `INSTALLED_APPS` in your projects `local.py`
- 3. restart auth
+ 3. run migrations and restart auth
  3. setup your perms as documented below
 
 ## Permissions
