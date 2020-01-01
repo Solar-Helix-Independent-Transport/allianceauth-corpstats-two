@@ -46,7 +46,7 @@ def corpstats_visible_to_user(view):
 @login_required
 @user_passes_test(access_corpstats_test)
 @permission_required('corputils.add_corpstats')
-@token_required(scopes='esi-corporations.track_members.v1')
+@token_required(scopes=['esi-corporations.track_members.v1', 'esi-universe.read_structures.v1'])
 def corpstats_add(request, token):
     try:
         if EveCharacter.objects.filter(character_id=token.character_id).exists():
