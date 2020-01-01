@@ -9,8 +9,8 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='allianceauth-corpstats-two',
-    version='0.0.0alpha1',
+    name='aa-corpstats-two',
+    version='1.0.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=install_requires,
@@ -18,9 +18,10 @@ setup(
     description='Alliance Auth Plugin',
     long_description=README,
     url='https://github.com/pvyParts/allianceauth-corpstats-two',
-    author='ak',
-    author_email='ak@ak.auth',
+    author='AaronKable',
+    author_email='aaronkable@gmail.com',
     classifiers=[
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
         'Intended Audience :: Developers',
