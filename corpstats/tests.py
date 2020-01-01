@@ -21,15 +21,20 @@ class CorpStatsManagerTestCase(TestCase):
         AuthUtils.add_main_character(cls.user2, 'another test character', '5', corp_id='4', corp_name='another_test_corp', corp_ticker='TEST2', alliance_id='6', alliance_name='TEST2')
         cls.user2.profile.refresh_from_db()
         cls.user3 = AuthUtils.create_user('test3')
+        AuthUtils.add_main_character(cls.user2, 'yet_another test character', '9', corp_id='7', corp_name='yet_another_test_corp', corp_ticker='TEST3')
+
         cls.user2.profile.refresh_from_db()
         cls.alliance = EveAllianceInfo.objects.create(alliance_id='3', alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
         cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance=cls.alliance, member_count=1)
         cls.alliance2 = EveAllianceInfo.objects.create(alliance_id='6', alliance_name='another test alliance', alliance_ticker='TEST2', executor_corp_id='4')
         cls.corp2 = EveCorporationInfo.objects.create(corporation_id='4', corporation_name='another test corp', corporation_ticker='TEST2', alliance=cls.alliance2, member_count=1)
+        cls.corp3 = EveCorporationInfo.objects.create(corporation_id='7', corporation_name='yet_another test corp', corporation_ticker='TEST3', alliance=None, member_count=1)
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
         cls.corpstat = CorpStat.objects.create(corp=cls.corp, token=cls.token)
         cls.token2 = Token.objects.create(user=cls.user2, access_token='b', character_id='5', character_name='another test character', character_owner_hash='y')
         cls.corpstat2 = CorpStat.objects.create(corp=cls.corp2, token=cls.token2)
+        cls.token3 = Token.objects.create(user=cls.user3, access_token='c', character_id='9', character_name='yet_another test character', character_owner_hash='x')
+        cls.corpstat3 = CorpStat.objects.create(corp=cls.corp3, token=cls.token3)
         cls.view_all_corp_permission = Permission.objects.get_by_natural_key('view_all_corpstats', 'corpstats', 'corpstat')
         cls.view_corp_permission = Permission.objects.get_by_natural_key('view_corp_corpstats', 'corpstats', 'corpstat')
         cls.view_alliance_permission = Permission.objects.get_by_natural_key('view_alliance_corpstats', 'corpstats', 'corpstat')
@@ -108,6 +113,7 @@ class CorpStatsManagerTestCase(TestCase):
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertIn('3', alliances)
         self.assertIn('6', alliances)
+        self.assertEquals(len(alliances), 2)
 
     def test_state_visible_to(self):
         user = User.objects.get(pk=self.user.pk)
