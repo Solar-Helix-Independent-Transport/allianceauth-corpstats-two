@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='aa-corpstats-two',
-    version='1.0.3',
+    version='1.0.4',
     packages=find_packages(),
     include_package_data=True,
     install_requires=install_requires,
@@ -19,7 +19,6 @@ setup(
     long_description=README,
     long_description_content_type="text/markdown",
     url='https://github.com/pvyParts/allianceauth-corpstats-two',
-    download_url='https://github.com/pvyParts/allianceauth-corpstats-two/archive/1.0.3.tar.gz',
     author='AaronKable',
     author_email='aaronkable@gmail.com',
     classifiers=[
