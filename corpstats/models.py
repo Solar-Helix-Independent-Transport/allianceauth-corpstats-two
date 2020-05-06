@@ -107,8 +107,7 @@ class CorpStat(models.Model):
         Members List[EveCharacter]
         Un-registered QuerySet[CorpMember]
         """
-        character_list = CorpMember.objects.filter(corpstats=self)
-        linked_chars = EveCharacter.objects.filter(character_id__in=character_list.values_list('character_id', flat=True))
+        linked_chars = EveCharacter.objects.filter(corporation_id=self.corp.corporation_id)
         linked_chars = linked_chars | EveCharacter.objects.filter( character_ownership__user__profile__main_character__corporation_id=self.corp.corporation_id)
         linked_chars = linked_chars.select_related('character_ownership','character_ownership__user__profile__main_character') \
             .prefetch_related('character_ownership__user__character_ownerships') \
@@ -136,8 +135,8 @@ class CorpStat(models.Model):
                 # character has no link
                 pass
 
-        unregistered = character_list.exclude(character_id__in=temp_ids)
-        tracking = character_list.filter(character_id__in=temp_ids)
+        unregistered = CorpMember.objects.exclude(character_id__in=temp_ids)
+        tracking = CorpMember.objects.filter(character_id__in=temp_ids)
         #print(mains, flush=True)
         #print(members, flush=True)
         #print(unregistered, flush=True)

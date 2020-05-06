@@ -22,7 +22,7 @@ def access_corpstats_test(user):
     return user.has_perm('corpstats.view_corp_corpstats') \
            or user.has_perm('corpstats.view_alliance_corpstats') \
            or user.has_perm('corpstats.view_state_corpstats') \
-           or user.has_perm('corpstats.add_corpstats')
+           or user.has_perm('corpstats.view_all_corpstats')
 
 
 def corpstats_visible_to_user(view):
@@ -45,7 +45,7 @@ def corpstats_visible_to_user(view):
 
 @login_required
 @user_passes_test(access_corpstats_test)
-@permission_required('corpstats.add_corpstats')
+@permission_required('corpstats.add_corpstat')
 @token_required(scopes=['esi-corporations.track_members.v1', 'esi-universe.read_structures.v1'])
 def corpstats_add(request, token):
     try:

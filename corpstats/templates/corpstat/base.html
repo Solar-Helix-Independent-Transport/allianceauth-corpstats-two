@@ -32,7 +32,7 @@
                                 </ul>
                             </li>
                         {% endif %}
-                        {% if perms.corputils.add_corpstats %}
+                        {% if perms.corpstats.add_corpstat %}
                             <li>
                                 <a href="{% url 'corpstat:add' %}">{% trans "Add" %}</a>
                             </li>
