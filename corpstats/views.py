@@ -97,7 +97,7 @@ def get_corp_stat(corpstats):
 
         services = [svc.name for svc in ServicesHook.get_services()] # services list
 
-        linked_chars = linked_chars.select_related('character_ownership', 'group_bot_exemptions', 
+        linked_chars = linked_chars.select_related('character_ownership',
                                                    'character_ownership__user__profile__main_character') \
             .prefetch_related('character_ownership__user__character_ownerships') \
 
