@@ -7,13 +7,22 @@
             <div class="col-lg-12 text-center">
                 <table class="table">
                     <tr>
-                        <td class="text-center col-lg-6
-                                {% if not corpstats.corp.alliance_id %}col-lg-offset-3{% endif %}"><img
-                                class="ra-avatar" src="{{ corpstats.corp_logo }}"></td>
-                        {% if corpstats.corp.alliance.alliance_id %}
-                            <td class="text-center col-lg-6"><img class="ra-avatar" src="{{ corpstats.alliance_logo }}">
+                        <td class="text-center {% if corpstats.corp.alliance %}col-md-4{% else %}col-md-8{% endif %}">
+                            <img class="ra-avatar" src="{{ corpstats.corp.logo_url_128 }}">
+                        </td>
+                        {% if corpstats.corp.alliance %}
+                            <td class="text-center col-md-4"><img class="ra-avatar" src="{{ corpstats.corp.alliance.logo_url_128 }}">
                             </td>
                         {% endif %}
+                        <td class="text-center col-md-4"  rowspan="2">
+                            <h4>Corp Info</h4>
+                            <span style="background-color: {% if auth_percent >= 95 %}#00AA33{% elif auth_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">Authenticated: {{auth_percent|floatformat:2|intcomma}}%</span><br>
+                            <span class="label label-default">Main/Alt Ratio: {{alt_ratio|floatformat:2|intcomma}}</span><br>
+                            <h4>Services Active</h4>
+                            {% for service, perc in service_percent.items %}
+                            <span style="background-color: {% if mumble_percent >= 95 %}#00AA33{% elif mumble_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}} Activated: {{perc|floatformat:2|intcomma}}%</span><br>
+                            {% endfor %}
+                        </td>
                     </tr>
                     <tr>
                         <td class="text-center"><h4>{{ corpstats.corp.corporation_name }}</h4></td>
@@ -21,17 +30,19 @@
                             <td class="text-center"><h4>{{ corpstats.corp.alliance.alliance_name }}</h4></td>
                         {% endif %}
                     </tr>
-                </table>
-            </div>
+
+            </table>
+            </div> 
         </div>
         <div class="row">
             <div class="col-lg-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <ul class="nav nav-pills pull-left">
-                            <li class="active"><a href="#mains" data-toggle="pill">{% trans 'Mains' %} ({{ mains|length }})</a></li>
-                            <li><a href="#members" data-toggle="pill">{% trans 'Members' %} ({{ members|length }})</a></li>
-                            <li><a href="#unregistered" data-toggle="pill">{% trans 'Unregistered' %} ({{ unregistered_members|length }})</a></li>
+                            <li class="active"><a href="#mains" data-toggle="pill">{% trans 'Mains' %} ({{ total_mains }})</a></li>
+                            <li><a href="#members" data-toggle="pill">{% trans 'Members' %} ({{ total_members }})</a></li>
+                            <li><a href="#unregistered" data-toggle="pill">{% trans 'Unregistered' %} ({{ total_unreg }})</a></li>
+                            <li><a href="#orphans" data-toggle="pill">{% trans 'Orphans' %} ({{ total_orphans }})</a></li>
                             <li><a href="#tracking" data-toggle="pill">{% trans 'Member Tracking' %}</a></li>
                         </ul>
                         <div class="pull-right">
@@ -65,7 +76,10 @@
                                                                  style="border: 0 none; box-shadow: none; background: transparent;">
                                                                 <img src="{{ main.main.portrait_url_64 }}" class="img-circle">
                                                                 <div class="caption text-center">
-                                                                    {{ main.main.character_name }}
+                                                                    {{ main.main.character_name }}<br>
+                                                                    {% for service, active in main.services.items %}
+                                                                    <span style="background-color: {% if active %}#00AA33{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}}</span> 
+                                                                    {% endfor %}
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -155,7 +169,7 @@
                                 {% endif %}
                             </div>
                             <div class="tab-pane fade" id="unregistered">
-                                {% if unregistered_members %}
+                                {% if unregistered %}
                                     <div class="table-responsive">
                                         <table class="table table-hover" id="table-unregistered">
                                             <thead>
@@ -166,7 +180,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {% for member in unregistered_members %}
+                                                {% for member in unregistered %}
                                                     <tr class="danger">
                                                         <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
                                                         <td class="text-center">{{ member.character_name }}</td>
@@ -182,53 +196,93 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    {% else %}
+                                    <div class="col-md-12 alert alert-success">
+                                        <strong>No Unregistered Characters</strong>.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            <div class="tab-pane fade" id="orphans">
+                                {% if orphans %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="table-orphans">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th class="text-center">{% trans "Character" %}</th>
+                                                    <th class="text-center"></th>
+                                                    <th class="text-center">{% trans "Main Character" %}</th>
+                                                    <th class="text-center">{% trans "Main Corporation" %}</th>
+                                                    <th class="text-center">{% trans "Main Alliance" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for member in orphans %}
+                                                    <tr class="danger">
+                                                        <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
+                                                        <td class="text-center">{{ member.character_name }}</td>
+                                                        <td class="text-center"><a
+                                                                href="https://zkillboard.com/character/{{ member.character_id }}/"
+                                                                class="label label-danger"
+                                                                target="_blank">{% trans "Killboard" %}</a></td>
+                                                        <td class="text-center">{{ member.character_ownership.user.profile.main_character.character_name }}</td>
+                                                        <td class="text-center">{{ member.character_ownership.user.profile.main_character.corporation_name }}</td>
+                                                        <td class="text-center">{{ member.character_ownership.user.profile.main_character.alliance_name }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                <div class="col-md-12 alert alert-success">
+                                    <strong>No Orphaned Characters</strong>.
+                                </div>
                                 {% endif %}
                             </div>
+
                             <div class="tab-pane fade" id="tracking">
-                                {% with members as members %}
-                                    {% if members %}
-                                        <div class="table-responsive">
-                                            <table class="table table-hover" id="table-tracking">
-                                                <thead>
-                                                    <tr>
-                                                        <th></th>
-                                                        <th class="text-center">{% trans 'Character' %}</th>
-                                                        <th class="text-center">{% trans 'Ship' %}</th>
-                                                        <th class="text-center">{% trans 'Last Online' %}</th>
-                                                        <th class="text-center">{% trans 'Joined' %}</th>
-                                                        <th class="text-center">{% trans 'Registered' %}</th>
+                                {% if members %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="table-tracking">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th class="text-center">{% trans 'Character' %}</th>
+                                                    <th class="text-center">{% trans 'Ship' %}</th>
+                                                    <th class="text-center">{% trans 'Last Online' %}</th>
+                                                    <th class="text-center">{% trans 'Joined' %}</th>
+                                                    <th class="text-center">{% trans 'Registered' %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for member in unregistered %}
+                                                    <tr class="danger">
+                                                        <td class="text-center" style="vertical-align:middle"><img src="{{ member.portrait_url }}" class="img-circle"></td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.character_name }}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.ship_type_name }}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.start_date|timesince }}</span></td>
+                                                        <td class="text-center" style="vertical-align:middle">
+                                                            <span class="glyphicon glyphicon-remove"></span>
+                                                        </td>
                                                     </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for member in unregistered_members %}
-                                                        <tr class="danger">
-                                                            <td class="text-center" style="vertical-align:middle"><img src="{{ member.portrait_url }}" class="img-circle"></td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.character_name }}</td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.ship_type_name }}</td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.start_date|timesince }}</span></td>
-                                                            <td class="text-center" style="vertical-align:middle">
-                                                                <span class="glyphicon glyphicon-remove"></span>
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                    {% for member in tracking %}
-                                                        <tr >
-                                                            <td class="text-center" style="vertical-align:middle"><img src="{{ member.portrait_url }}" class="img-circle"></td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.character_name }}</td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.ship_type_name }}</td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
-                                                            <td class="text-center" style="vertical-align:middle">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.start_date|timesince }}</span></td>
-                                                            <td class="text-center" style="vertical-align:middle">
-                                                                <span class="glyphicon glyphicon-ok"></span>
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    {% endif %}
-                                {% endwith %}
+                                                {% endfor %}
+                                                {% for member in tracking %}
+                                                    <tr >
+                                                        <td class="text-center" style="vertical-align:middle"><img src="{{ member.portrait_url }}" class="img-circle"></td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.character_name }}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.ship_type_name }}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.logoff_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.logon_date|timesince }} ago</span><br><span class="label label-default">Duration: {{ member.logon_date|timesince:member.logoff_date }}</span></td>
+                                                        <td class="text-center" style="vertical-align:middle">{{ member.start_date|date:"Y-m-d H:i" }}<br><span class="label label-primary">{{ member.start_date|timesince }}</span></td>
+                                                        <td class="text-center" style="vertical-align:middle">
+                                                            <span class="glyphicon glyphicon-ok"></span>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

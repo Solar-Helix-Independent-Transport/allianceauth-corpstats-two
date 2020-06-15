@@ -24,21 +24,22 @@ class CorpStatsManagerTestCase(TestCase):
         AuthUtils.add_main_character(cls.user2, 'yet_another test character', '9', corp_id='7', corp_name='yet_another_test_corp', corp_ticker='TEST3')
 
         cls.user2.profile.refresh_from_db()
-        cls.alliance = EveAllianceInfo.objects.create(alliance_id='3', alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
-        cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance=cls.alliance, member_count=1)
-        cls.alliance2 = EveAllianceInfo.objects.create(alliance_id='6', alliance_name='another test alliance', alliance_ticker='TEST2', executor_corp_id='4')
-        cls.corp2 = EveCorporationInfo.objects.create(corporation_id='4', corporation_name='another test corp', corporation_ticker='TEST2', alliance=cls.alliance2, member_count=1)
-        cls.corp3 = EveCorporationInfo.objects.create(corporation_id='7', corporation_name='yet_another test corp', corporation_ticker='TEST3', alliance=None, member_count=1)
-        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
+        cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id=2)
+        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance=cls.alliance, member_count=1)
+        cls.alliance2 = EveAllianceInfo.objects.create(alliance_id=6, alliance_name='another test alliance', alliance_ticker='TEST2', executor_corp_id=4)
+        cls.corp2 = EveCorporationInfo.objects.create(corporation_id=4, corporation_name='another test corp', corporation_ticker='TEST2', alliance=cls.alliance2, member_count=1)
+        cls.corp3 = EveCorporationInfo.objects.create(corporation_id=7, corporation_name='yet_another test corp', corporation_ticker='TEST3', alliance=None, member_count=1)
+        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id=1, character_name='test character', character_owner_hash='z')
         cls.corpstat = CorpStat.objects.create(corp=cls.corp, token=cls.token)
-        cls.token2 = Token.objects.create(user=cls.user2, access_token='b', character_id='5', character_name='another test character', character_owner_hash='y')
+        cls.token2 = Token.objects.create(user=cls.user2, access_token='b', character_id=5, character_name='another test character', character_owner_hash='y')
         cls.corpstat2 = CorpStat.objects.create(corp=cls.corp2, token=cls.token2)
-        cls.token3 = Token.objects.create(user=cls.user3, access_token='c', character_id='9', character_name='yet_another test character', character_owner_hash='x')
+        cls.token3 = Token.objects.create(user=cls.user3, access_token='c', character_id=9, character_name='yet_another test character', character_owner_hash='x')
         cls.corpstat3 = CorpStat.objects.create(corp=cls.corp3, token=cls.token3)
         cls.view_all_corp_permission = Permission.objects.get_by_natural_key('view_all_corpstats', 'corpstats', 'corpstat')
         cls.view_corp_permission = Permission.objects.get_by_natural_key('view_corp_corpstats', 'corpstats', 'corpstat')
         cls.view_alliance_permission = Permission.objects.get_by_natural_key('view_alliance_corpstats', 'corpstats', 'corpstat')
         cls.view_state_permission = Permission.objects.get_by_natural_key('view_state_corpstats', 'corpstats', 'corpstat')
+        cls.add_permission = Permission.objects.get_by_natural_key('view_state_corpstats', 'corpstats', 'corpstat')
         cls.state = AuthUtils.create_state('test state', 500)
 
         AuthUtils.assign_state(cls.user, cls.state, disconnect_signals=True)
@@ -93,8 +94,8 @@ class CorpStatsManagerTestCase(TestCase):
         user = User.objects.get(pk=self.user.pk)  # permissions cache is only cleared when retrieved fresh from db
         user.user_permissions.add(self.view_alliance_permission)
         alliances = CorpStat.objects.alliances_visible_to(user)
-        self.assertIn('3', alliances)
-        self.assertNotIn('6', alliances)
+        self.assertIn(3, alliances)
+        self.assertNotIn(6, alliances)
 
     def test_no_perms_visible_alliances(self):
         user = User.objects.get(pk=self.user.pk)
@@ -111,8 +112,8 @@ class CorpStatsManagerTestCase(TestCase):
         user = User.objects.get(pk=self.user.pk)
         user.user_permissions.add(self.view_all_corp_permission)
         alliances = CorpStat.objects.alliances_visible_to(user)
-        self.assertIn('3', alliances)
-        self.assertIn('6', alliances)
+        self.assertIn(3, alliances)
+        self.assertIn(6,  alliances)
         self.assertEquals(len(alliances), 2)
 
     def test_state_visible_to(self):
@@ -120,8 +121,8 @@ class CorpStatsManagerTestCase(TestCase):
         self.state.member_alliances.add(self.alliance)
         user.user_permissions.add(self.view_state_permission)
         alliances = CorpStat.objects.alliances_visible_to(user)
-        self.assertIn('3', alliances)
-        self.assertNotIn('6', alliances)
+        self.assertIn(3, alliances)
+        self.assertNotIn(6, alliances)
 
     def test_visible_superuser(self):
         user = User.objects.get(pk=self.user.pk)
@@ -135,13 +136,14 @@ class CorpStatsManagerTestCase(TestCase):
         alliances = CorpStat.objects.alliances_visible_to(user)
         self.assertEquals(len(alliances), 0)
 
+
 class CorpStatsUpdateTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = AuthUtils.create_user('test')
         AuthUtils.add_main_character(cls.user, 'test character', '1', corp_id='2', corp_name='test_corp', corp_ticker='TEST', alliance_id='3', alliance_name='TEST')
-        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
-        cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', member_count=1)
+        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id=1, character_name='test character', character_owner_hash='z')
+        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', member_count=1)
 
     def setUp(self):
         self.corpstat = CorpStat.objects.get_or_create(token=self.token, corp=self.corp)[0]
@@ -210,12 +212,12 @@ class CorpStatsPropertiesTestCase(TestCase):
         AuthUtils.add_main_character(cls.user, 'test character', '1', corp_id='2', corp_name='test_corp', corp_ticker='TEST', alliance_name='TEST')
         cls.user.profile.refresh_from_db()
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
-        cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
-        cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
+        cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id=2)
+        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
         cls.corp.alliance = cls.alliance
         cls.corp.save()
         cls.corpstat = CorpStat.objects.create(token=cls.token, corp=cls.corp)
-        cls.character = EveCharacter.objects.create(character_name='another test character', character_id='4', corporation_id='2', corporation_name='test corp', corporation_ticker='TEST')
+        cls.character = EveCharacter.objects.create(character_name='another test character', character_id=4, corporation_id=2, corporation_name='test corp', corporation_ticker='TEST')
         AuthUtils.disconnect_signals()
         CharacterOwnership.objects.create(character=cls.character, user=cls.user, owner_hash='a')
         AuthUtils.connect_signals()
@@ -231,11 +233,11 @@ class CorpMemberTestCase(TestCase):
         cls.user = AuthUtils.create_user('test')
         AuthUtils.add_main_character(cls.user, 'test character', '1', corp_id='2', corp_name='test_corp', corp_ticker='TEST', alliance_id='3', alliance_name='TEST')
         cls.user.profile.refresh_from_db()
-        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='a')
-        cls.alliance = EveAllianceInfo.objects.create(alliance_id='3', alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id='2')
-        cls.corp = EveCorporationInfo.objects.create(corporation_id='2', corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
+        cls.token = Token.objects.create(user=cls.user, access_token='a', character_id=1, character_name='test character', character_owner_hash='a')
+        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
+        cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id=2)
         cls.corpstat = CorpStat.objects.create(token=cls.token, corp=cls.corp)
-        cls.member = CorpMember.objects.create(corpstats=cls.corpstat, character_id='2', character_name='other test character', location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
+        cls.member = CorpMember.objects.create(corpstats=cls.corpstat, character_id=2, character_name='other test character', location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
 
     def test_portrait_url(self):
         self.assertEquals(self.member.portrait_url(size=32), 'https://image.eveonline.com/Character/2_32.jpg')

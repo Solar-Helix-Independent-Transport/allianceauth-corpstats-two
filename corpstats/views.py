@@ -3,7 +3,7 @@ import os
 from bravado.exception import HTTPError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
@@ -14,9 +14,25 @@ from django.http import HttpResponse
 import csv
 import re
 from itertools import chain
+from allianceauth.services.hooks import ServicesHook
 
 from .models import CorpStat, CorpMember
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+SERVICE_DB = {
+    "mumble":"mumble",
+    "smf":"smf",
+    "discord":"discord",
+    "discorse":"discourse",
+    "Wiki JS":"wikijs",
+    "ips4":"ips4",
+    "openfire":"openfire",
+    "phpbb3":"phpbb3",
+    "teamspeak3":"teamspeak3",
+}
 
 def access_corpstats_test(user):
     return user.has_perm('corpstats.view_corp_corpstats') \
@@ -73,13 +89,118 @@ def corpstats_add(request, token):
         messages.error(request, _('Failed to gather corporation statistics with selected token.'))
     return redirect('corpstat:view')
 
+def get_corp_stat(corpstats):
+    if corpstats:
+        linked_chars = EveCharacter.objects.filter(corporation_id=corpstats.corp.corporation_id)  # get all authenticated characters in corp from auth internals
+        linked_chars = linked_chars | EveCharacter.objects.filter(
+            character_ownership__user__profile__main_character__corporation_id=corpstats.corp.corporation_id)  # add all alts for characters in corp
+
+        services = [svc.name for svc in ServicesHook.get_services()] # services list
+
+        linked_chars = linked_chars.select_related('character_ownership', 'group_bot_exemptions', 
+                                                   'character_ownership__user__profile__main_character') \
+            .prefetch_related('character_ownership__user__character_ownerships') \
+
+        for service in services:
+            try:
+                linked_chars = linked_chars.select_related(f"character_ownership__user__{SERVICE_DB[service]}")
+            except Exception as e:
+                services.remove(service)
+                logger.error(f"Unknown Service {e} Skipping")
+        
+        linked_chars = linked_chars.order_by('character_name')  # order by name
+
+        members = [] # member list
+        orphans = [] # orphan list
+        alt_count = 0 # 
+        services_count = {} # for the stats
+        for service in services:
+            services_count[service] = 0 # prefill
+
+        mains = {} # main list
+        temp_ids = [] # filter out linked vs unreg'd
+        for char in linked_chars:
+            try:
+                main = char.character_ownership.user.profile.main_character # main from profile
+                if main is not None: 
+                    if main.corporation_id == corpstats.corp.corporation_id: # iis this char in corp
+                        if main.character_id not in mains: # add array
+                            mains[main.character_id] = {
+                                'main':main,
+                                'alts':[], 
+                                'services':{}
+                                }
+                            for service in services:
+                                mains[main.character_id]['services'][service] = False # pre fill
+
+                        if char.character_id == main.character_id:
+                            for service in services:
+                                try:
+                                    if hasattr(char.character_ownership.user, SERVICE_DB[service]):
+                                        mains[main.character_id]['services'][service] = True
+                                        services_count[service] += 1
+                                except Exception as e:
+                                    logger.error(e)
+
+                        mains[main.character_id]['alts'].append(char) #add to alt listing
+                    
+                    if char.corporation_id == corpstats.corp.corporation_id:
+                        members.append(char) # add to member listing as a known char
+                        if not char.character_id == main.character_id:
+                            alt_count += 1
+                        if main.corporation_id != corpstats.corp.corporation_id:
+                            orphans.append(char)
+
+                    temp_ids.append(char.character_id) # exclude from un-authed
+
+            except ObjectDoesNotExist: # main not found we are unauthed
+                pass
+
+        unregistered = CorpMember.objects.filter(corpstats=corpstats).exclude(character_id__in=temp_ids) # filter corpstat list for unknowns
+        tracking = CorpMember.objects.filter(corpstats=corpstats).filter(character_id__in=temp_ids) # filter corpstat list for unknowns
+
+
+        # yay maths
+        total_mains = len(mains)
+        total_unreg = len(unregistered)
+        total_members = len(members) + total_unreg  # is unreg + known
+        # yay more math
+        auth_percent = len(members)/total_members*100
+        alt_ratio = 0
+
+        try:
+            alt_ratio = total_mains/alt_count
+        except:
+            pass
+        # services
+        service_percent = {}
+        for service in services:
+            if service in SERVICE_DB:
+                try:
+                    service_percent[service] = services_count[service]/total_mains*100
+                except Exception as e:
+                    service_percent[service] = 0
+
+        return members, mains, orphans, unregistered, total_mains, total_unreg, total_members, auth_percent, alt_ratio, service_percent, tracking, services
+    return False
 
 @login_required
 @user_passes_test(access_corpstats_test)
-@corpstats_visible_to_user
-def corpstat_view(request, corpstats, corp_id=None,):
+def corpstat_view(request, corp_id=None):
+
+    corpstats = None
+
+    # get requested model
+    if corp_id:
+        corp = get_object_or_404(EveCorporationInfo, corporation_id=corp_id)
+        corpstats = get_object_or_404(CorpStat, corp=corp)
+
     # get available models
-    available = CorpStat.objects.visible_to(request.user).order_by('corp__corporation_name')
+    available = CorpStat.objects.visible_to(request.user).order_by('corp__corporation_name').select_related('corp')
+
+    # ensure we can see the requested model
+    if corpstats and corpstats not in available:
+        raise PermissionDenied('You do not have permission to view the selected corporation statistics module.')
 
     # get default model if none requested
     if not corp_id and available.count() == 1:
@@ -92,18 +213,62 @@ def corpstat_view(request, corpstats, corp_id=None,):
             pass
 
     context = {
-        'available_corps': available,
+        'available': available, # list what stats are visible to user
         'available_alliances': CorpStat.objects.alliances_visible_to(request.user),
     }
+
     if corpstats:
-        mains, members, unregistered, tracking = corpstats.get_stats()
+        members, mains, orphans, unregistered, total_mains, total_unreg, total_members, auth_percent, alt_ratio, service_percent, tracking, services = get_corp_stat(corpstats)
+        # template context array
         context.update({
-            'mains': mains,
-            'members': members,
-            'unregistered_members': unregistered,
-            'tracking': tracking,
             'corpstats': corpstats,
+            'members': members,
+            'mains': mains,
+            'orphans': orphans,
+            'total_orphans': len(orphans),
+            'total_mains': total_mains,
+            'total_members': total_members,
+            'total_unreg': total_unreg,
+            'auth_percent': auth_percent,
+            'service_percent': service_percent,
+            'alt_ratio': alt_ratio,
+            'unregistered': unregistered,
+            'tracking': tracking,
+            "services": services
         })
+
+    return render(request, 'corpstat/corpstats.html', context=context)  # render to template
+
+#@login_required
+#@user_passes_test(access_corpstats_test)
+#@corpstats_visible_to_user
+#def corpstat_view(request, corpstats, corp_id=None,):
+#    # get available models
+#    available = CorpStat.objects.visible_to(request.user).order_by('corp__corporation_name')#
+
+#    # get default model if none requested
+#    if not corp_id and available.count() == 1:
+#        corpstats = available[0]
+#    elif not corp_id and available.count() > 1 and request.user.profile.main_character:
+        # get their main corp if available
+#        try:
+#            corpstats = available.get(corp__corporation_id=request.user.profile.main_character.corporation_id)
+#        except CorpStats.DoesNotExist:
+#            pass
+
+#    context = {
+#        'available_corps': available,
+#        'available_alliances': CorpStat.objects.alliances_visible_to(request.user),
+#    }
+#    if corpstats:
+#        mains, members, unregistered, tracking = corpstats.get_stats()
+#        context.update({
+#            'mains': mains,
+#            'members': members,
+#            'unregistered_members': unregistered,
+#            'tracking': tracking,
+#            'corpstats': corpstats,
+#        })
 
     return render(request, 'corpstat/corpstats.html', context=context)
 
