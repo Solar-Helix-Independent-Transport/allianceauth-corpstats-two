@@ -13,6 +13,8 @@ from allianceauth.notifications import notify
 
 from .managers import CorpStatManager
 
+from .provider import esi
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,22 +40,21 @@ class CorpStat(models.Model):
 
     def update(self):
         try:
-            c = self.token.get_esi_client()
-
             # make sure the token owner is still in this corp
-
-            assert c.Character.get_characters_character_id(
+            assert esi.client.Character.get_characters_character_id(
                 character_id=self.token.character_id).result()['corporation_id'] == int(self.corp.corporation_id)
 
             # get member tracking data and retrieve member ids for translation
-            tracking = c.Corporation.get_corporations_corporation_id_membertracking(corporation_id=self.corp.corporation_id).result()
+            tracking = esi.client.Corporation.get_corporations_corporation_id_membertracking(
+                corporation_id=self.corp.corporation_id,
+                token=self.token.valid_access_token()).result()
             member_ids = [t['character_id'] for t in tracking]
 
             # requesting too many ids per call results in a HTTP400
             # the swagger spec doesn't have a maxItems count
             # manual testing says we can do over 350, but let's not risk it
             member_id_chunks = [member_ids[i:i + 255] for i in range(0, len(member_ids), 255)]
-            member_name_chunks = [c.Universe.post_universe_names(ids=id_chunk).result() for id_chunk in
+            member_name_chunks = [esi.client.Universe.post_universe_names(ids=id_chunk).result() for id_chunk in
                                   member_id_chunks]
 
             member_list = {t['character_id']: t for t in tracking}
@@ -63,18 +64,22 @@ class CorpStat(models.Model):
 
             # get ship and location names
             for t in tracking:
-                t['ship_type_name'] = c.Universe.get_universe_types_type_id(type_id=t['ship_type_id']).result()['name'] #TODO use the inbuilt eve provider
+                t['ship_type_name'] = esi.client.Universe.get_universe_types_type_id(type_id=t['ship_type_id']).result()['name'] #TODO use the inbuilt eve provider
                 #locations = c.Universe.post_universe_names(ids=[t['location_id']]).result()
                 #t['location_name'] = locations[0]['name'] if locations else ''  # might be a citadel we can't know about
                 member_list[t['character_id']].update(t)
 
             # purge old members
-            CorpMember.objects.filter(corpstats=self).exclude(character_id__in=member_ids).delete()
+            old_members = CorpMember.objects.filter(corpstats=self)
+            if old_members.exists():
+                old_members._raw_delete(old_members.db)
 
+            member_db_create = []
             # bulk update and create new member models
             for c_id, data in member_list.items():
-                CorpMember.objects.update_or_create(character_id=c_id, corpstats=self, defaults=data)
+                member_db_create.append(CorpMember(corpstats=self, **data))
 
+            CorpMember.objects.bulk_create(member_db_create)
             # update the timer
             self.save()
 
