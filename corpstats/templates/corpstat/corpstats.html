@@ -20,7 +20,7 @@
                             <span class="label label-default">Main/Alt Ratio: {{alt_ratio|floatformat:2|intcomma}}</span><br>
                             <h4>Services Active</h4>
                             {% for service, perc in service_percent.items %}
-                            <span style="background-color: {% if mumble_percent >= 95 %}#00AA33{% elif mumble_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}} Activated: {{perc|floatformat:2|intcomma}}%</span><br>
+                            <span style="background-color: {% if perc >= 95 %}#00AA33{% elif perc >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}} Activated: {{perc|floatformat:2|intcomma}}%</span><br>
                             {% endfor %}
                         </td>
                     </tr>
