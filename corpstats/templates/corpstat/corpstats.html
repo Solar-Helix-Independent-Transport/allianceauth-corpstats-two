@@ -149,7 +149,7 @@
                                                         <td class="text-center">{{ member.character_ownership.user.profile.main_character.alliance_name }}</td>
                                                     </tr>
                                                 {% endfor %}
-                                                {% for member in unregistered_members %}
+                                                {% for member in unregistered %}
                                                     <tr class="danger">
                                                         <td><img src="{{ member.portrait_url }}" class="img-circle"></td>
                                                         <td class="text-center">{{ member.character_name }}</td>
