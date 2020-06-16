@@ -1,3 +1,6 @@
 from esi.clients import EsiClientProvider
 
-esi = EsiClientProvider()
+class corpstat_provider(EsiClientProvider):
+    pass
+
+esi = corpstat_provider()

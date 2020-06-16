@@ -10,6 +10,7 @@ from esi.errors import TokenError
 from bravado.exception import HTTPForbidden
 from django.contrib.auth.models import User, Permission
 from allianceauth.authentication.models import CharacterOwnership
+from django.core.cache import cache
 
 class CorpStatsManagerTestCase(TestCase):
     @classmethod
@@ -144,9 +145,11 @@ class CorpStatsUpdateTestCase(TestCase):
         AuthUtils.add_main_character(cls.user, 'test character', '1', corp_id='2', corp_name='test_corp', corp_ticker='TEST', alliance_id='3', alliance_name='TEST')
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id=1, character_name='test character', character_owner_hash='z')
         cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', member_count=1)
+        cache.clear()
 
     def setUp(self):
         self.corpstat = CorpStat.objects.get_or_create(token=self.token, corp=self.corp)[0]
+        cache.clear()
 
     def test_can_update(self):
         self.assertTrue(self.corpstat.can_update(self.user))
@@ -157,19 +160,20 @@ class CorpStatsUpdateTestCase(TestCase):
         self.user.refresh_from_db()
         self.corpstat.token.refresh_from_db()
 
-    @mock.patch('esi.clients.SwaggerClient')
+    @mock.patch('corpstats.provider.corpstat_provider')
     def test_update_add_member(self, SwaggerClient):
-        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [
+        SwaggerClient.client.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.client.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [
             {'character_id': 1, 'ship_type_id': 2, 'location_id': 3, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
-        SwaggerClient.return_value.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
+        SwaggerClient.client.Universe.get_universe_types_type_id.return_value.result.return_value = {'name': 'test ship'}
         SwaggerClient.return_value.Universe.post_universe_names.return_value.result.return_value = [{'id': 1, 'name': 'test character', 'category':'character'}]
 
         self.corpstat.update()
         self.assertTrue(CorpMember.objects.filter(character_id=1, character_name='test character', corpstats=self.corpstat).exists())
 
-    @mock.patch('esi.clients.SwaggerClient')
+    @mock.patch('corpstats.provider.corpstat_provider')
     def test_update_remove_member(self, SwaggerClient):
+        SwaggerClient = mock.MagicMock()
         CorpMember.objects.create(character_id='2', character_name='old test character', corpstats=self.corpstat, location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
         SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
         SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [{'character_id': 1, 'ship_type_id': 2, 'location_id': 3, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
@@ -179,7 +183,7 @@ class CorpStatsUpdateTestCase(TestCase):
         self.assertFalse(CorpMember.objects.filter(character_id='2', corpstats=self.corpstat).exists())
 
     @mock.patch('corpstats.models.notify')
-    @mock.patch('esi.clients.SwaggerClient')
+    @mock.patch('corpstats.provider.EsiClientProvider')
     def test_update_deleted_token(self, SwaggerClient, notify):
         SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
         SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = TokenError()
@@ -188,16 +192,16 @@ class CorpStatsUpdateTestCase(TestCase):
         self.assertTrue(notify.called)
 
     @mock.patch('corpstats.models.notify')
-    @mock.patch('esi.clients.SwaggerClient')
+    @mock.patch('corpstats.provider.EsiClientProvider')
     def test_update_http_forbidden(self, SwaggerClient, notify):
-        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
-        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = HTTPForbidden(mock.Mock())
+        SwaggerClient.client.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.client.Corporation.get_corporations_corporation_id_membertracking.return_value.result.side_effect = HTTPForbidden(mock.Mock())
         self.corpstat.update()
         self.assertFalse(CorpStat.objects.filter(corp=self.corp).exists())
         self.assertTrue(notify.called)
 
     @mock.patch('corpstats.models.notify')
-    @mock.patch('esi.clients.SwaggerClient')
+    @mock.patch('corpstats.provider.esi')
     def test_update_token_character_corp_changed(self, SwaggerClient, notify):
         SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 3}
         self.corpstat.update()
@@ -235,7 +239,6 @@ class CorpMemberTestCase(TestCase):
         cls.user.profile.refresh_from_db()
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id=1, character_name='test character', character_owner_hash='a')
         cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
-        cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id=2)
         cls.corpstat = CorpStat.objects.create(token=cls.token, corp=cls.corp)
         cls.member = CorpMember.objects.create(corpstats=cls.corpstat, character_id=2, character_name='other test character', location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
 
