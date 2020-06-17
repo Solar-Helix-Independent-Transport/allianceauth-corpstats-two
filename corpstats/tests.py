@@ -187,8 +187,8 @@ class CorpStatsPropertiesTestCase(TestCase):
         AuthUtils.connect_signals()
 
     def test_logos(self):
-        self.assertEqual(self.corpstat.corp_logo(size=128), 'https://image.eveonline.com/Corporation/2_128.png')
-        self.assertEqual(self.corpstat.alliance_logo(size=128), 'https://image.eveonline.com/Alliance/3_128.png')
+        self.assertEqual(self.corpstat.corp_logo(size=128), self.corp.logo_url_128)
+        self.assertEqual(self.corpstat.alliance_logo(size=128),  self.alliance.logo_url_128)
 
 
 class CorpMemberTestCase(TestCase):
@@ -203,5 +203,4 @@ class CorpMemberTestCase(TestCase):
         cls.member = CorpMember.objects.create(corpstats=cls.corpstat, character_id=2, character_name='other test character', location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
 
     def test_portrait_url(self):
-        self.assertEquals(self.member.portrait_url(size=32), 'https://image.eveonline.com/Character/2_32.jpg')
         self.assertEquals(self.member.portrait_url(size=32), self.member.portrait_url_32)

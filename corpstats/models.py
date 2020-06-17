@@ -16,7 +16,7 @@ from allianceauth.eveonline.models import EveCorporationInfo, EveCharacter
 from allianceauth.notifications import notify
 
 from allianceauth.services.hooks import ServicesHook
-
+from allianceauth.eveonline.evelinks import eveimageserver
 from .managers import CorpStatManager
 
 from .provider import esi
@@ -258,13 +258,13 @@ class CorpStat(models.Model):
         return self.token.user == user or self.visible_to(user)
 
     def corp_logo(self, size=128):
-        return "https://image.eveonline.com/Corporation/%s_%s.png" % (self.corp.corporation_id, size)
+        return eveimageserver.corporation_logo_url(self.corp.corporation_id, size=size)
 
     def alliance_logo(self, size=128):
         if self.corp.alliance_id:
-            return "https://image.eveonline.com/Alliance/%s_%s.png" % (self.corp.alliance.alliance_id, size)
+            return eveimageserver.alliance_logo_url(self.corp.alliance.alliance_id, size=size)
         else:
-            return "https://image.eveonline.com/Alliance/1_%s.png" % size
+            return eveimageserver.alliance_logo_url(1, size=size)
 
 
 class CorpMember(models.Model):
@@ -294,10 +294,10 @@ class CorpMember(models.Model):
         return self.character_name
 
     def portrait_url(self, size=32):
-        return "https://image.eveonline.com/Character/%s_%s.jpg" % (self.character_id, size)
+        return eveimageserver.character_portrait_url(self.character_id, size=size)
 
     def __getattr__(self, item):
         if item.startswith('portrait_url_'):
-            size = item.strip('portrait_url_')
+            size = int(item.strip('portrait_url_'))
             return self.portrait_url(size)
         return self.__getattribute__(item)
