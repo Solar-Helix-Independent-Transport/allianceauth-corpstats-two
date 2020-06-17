@@ -59,8 +59,9 @@ class CorpStat(models.Model):
     def update(self):
         try:
             # make sure the token owner is still in this corp
-            assert esi.client.Character.get_characters_character_id(
-                character_id=self.token.character_id).result()['corporation_id'] == int(self.corp.corporation_id)
+            corp_id = esi.client.Character.get_characters_character_id( 
+                character_id=self.token.character_id).result()['corporation_id']
+            assert corp_id == int(self.corp.corporation_id)
 
             # get member tracking data and retrieve member ids for translation
             tracking = esi.client.Corporation.get_corporations_corporation_id_membertracking(
@@ -114,7 +115,7 @@ class CorpStat(models.Model):
                 notify(self.token.user, "%s failed to update with your ESI token." % self,
                        message="%s: %s" % (e.status_code, e.message), level="error")
             self.delete()
-        except AssertionError:
+        except AssertionError as e:
             logger.warning("%s token character no longer in corp." % self)
             if self.token.user:
                 notify(self.token.user, "%s cannot update with your ESI token." % self,

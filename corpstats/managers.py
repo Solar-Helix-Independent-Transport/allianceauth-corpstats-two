@@ -43,14 +43,3 @@ class CorpStatManager(models.Manager):
 
     def visible_to(self, user):
         return self.get_queryset().visible_to(user)
-
-    def alliances_visible_to(self, user):
-        alliances = []
-        if user.has_perm('corpstats.view_all_corpstats'):
-            alliances = set(self.visible_to(user).filter(corp__alliance__alliance_id__isnull=False).values_list('corp__alliance__alliance_id', 'corp__alliance__alliance_name'))
-        elif user.profile.main_character:
-            if user.has_perm('corpstats.view_alliance_corpstats') and user.profile.main_character.alliance_id:
-                alliances.append((user.profile.main_character.alliance_id, user.profile.main_character.alliance_name))
-            if user.has_perm('corpstats.view_state_corpstats'):
-                alliances += [(a.alliance_id, a.alliance_name) for a in user.profile.state.member_alliances.all()]
-        return {a[0]: a[1] for a in alliances}
