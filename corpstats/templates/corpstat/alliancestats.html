@@ -1,57 +1,77 @@
 {% extends 'corpstat/base.html' %}
 {% load i18n %}
 {% load humanize %}
+{% load corp_tags %}
 {% block member_data %}
-    <div class="row">
-        <div class="col-lg-12 text-center">
-            <table class="table">
-                <tr>
-                    <td class="text-center col-lg-6 col-lg-offset-3">
-                        <img class="ra-avatar" src="https://image.eveonline.com/Alliance/{{alliance_id}}_128.png">
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center"><h4>{{ alliance_name }}</h4></td>
-                </tr>
-            </table>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Corporation Stats
+                    </div>
+                    <div class="panel-body">
+                            <div class="tab-pane fade in active" id="mains">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="table-mains">
+                                            <thead>
+                                                <tr>
+                                                    <th>Corporation</th>
+                                                    <th>Members</th>
+                                                    <th>Mains</th>
+                                                    <th>Ratio</th>
+                                                    <th>Auth'd</th>
+                                                    <th>Orphans</th>
+                                                    {% for corp in stats %}
+                                                    {% if forloop.first %}
+                                                    {% for k, v in corp.data.service_percent.items %}
+                                                    <th>{{ k|title }}</th>
+                                                    {% endfor %}
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                    <th>Last Update</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for corp in stats %}
+                                                    <tr>
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.corp_name}}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.total_members}}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.total_mains}}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.alt_ratio|floatformat:2|intcomma}}</td>
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.auth_percent|floatformat:2|intcomma}}</td>
+                                                        <td class="text-center" style="color: white;background-color: {% if corp.data.orphan_count == 0 %}#00AA33{% else %}#AA0000{% endif %}";vertical-align:middle">{{corp.data.orphan_count}}</td>
+                                                        {% for k, v in corp.data.service_percent.items %}<td class="text-center" style="color: white;background-color: {% if v >= 95 %}#00AA33{% elif v >= 80 %}#FF9000{% else %}#AA0000{% endif %}">{{v}}% </td>{% endfor%}
+                                                        <td class="text-center" style="vertical-align:middle">{{corp.date|str2date|naturaltime}}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-<div class="row"><h3 class="text-center">Corporation Breakdown</h3>
-    <table class="table table-striped datatables" id="table-corps">
-        <thead>
-            <th>Corporation</th>
-            <th>Auth'd Mains</th>
-            <th>Auth'd Alts</th>
-            <th>Member Count</th>
-            <th>Registered</th>
-        </thead>
-        <tbody>
-            {% for corp, cs in corp_breakdown.items %}
-                <tr>
-                    <td>{{corp}}</td>
-                    <td class="text-center">{{ cs.mains }} </td>
-                    <td class="text-center">{{ cs.alts }}</td>
-                    <td class="text-center">{{ cs.total }} </td>
-                    <td class="text-center">{% if cs.total %}{% widthratio cs.members cs.total 100 %}%{% endif %} </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-   </table>
-</div>
 {% endblock %}
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
+
 {% endblock %}
 {% block extra_css %}
+    <style>
+        .form-control {
+            margin: 2px;
+        }
+    </style>
     {% include 'bundles/datatables-css.html' %}
 {% endblock %}
 {% block extra_script %}
-    $(document).ready(function() {
-        $('#table-corps').DataTable({
-            "order": [
-                [0, "desc"]
-            ],
-            "pageLength": 100
+    $(document).ready(function(){
+        $('#table-mains').DataTable({
+            "lengthMenu": [[-1, 25, 50], ["All", 25, 50]],
+
         });
     });
+
+
 {% endblock %}
