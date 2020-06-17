@@ -17,5 +17,7 @@ matrix:
      python: '3.6.7'
 deploy:
   provider: pypi
+  user: __token__
+  password: $password
   on:
     tags: true
