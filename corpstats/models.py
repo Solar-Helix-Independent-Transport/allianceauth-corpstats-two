@@ -168,14 +168,18 @@ class CorpStat(models.Model):
         linked_chars = linked_chars.select_related('character_ownership',
                                                     'character_ownership__user__profile__main_character') \
             .prefetch_related('character_ownership__user__character_ownerships') \
-
-        for service in services:
-            try:
-                linked_chars = linked_chars.select_related(f"character_ownership__user__{SERVICE_DB[service]}")
-            except Exception as e:
-                services.remove(service)
-                logger.error(f"Unknown Service {e} Skipping")
         
+        skiped_services = []
+        for service in services:
+            if service in SERVICE_DB:
+                linked_chars = linked_chars.select_related("character_ownership__user__{}".format(SERVICE_DB[service]))
+            else:
+                skiped_services.append(service)
+                logger.error(f"Unknown Service {service} Skipping")
+
+        for service in skiped_services:
+            services.remove(service)
+
         linked_chars = linked_chars.order_by('character_name')  # order by name
 
         members = [] # member list

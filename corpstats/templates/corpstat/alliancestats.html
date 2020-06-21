@@ -38,7 +38,7 @@
                                                         <td class="text-center" style="vertical-align:middle">{{corp.data.total_members}}</td>
                                                         <td class="text-center" style="vertical-align:middle">{{corp.data.total_mains}}</td>
                                                         <td class="text-center" style="vertical-align:middle">{{corp.data.alt_ratio|floatformat:2|intcomma}}</td>
-                                                        <td class="text-center" style="vertical-align:middle">{{corp.data.auth_percent|floatformat:2|intcomma}}</td>
+                                                        <td class="text-center" style="color: white;background-color: {% if corp.data.auth_percent >= 95 %}#00AA33{% elif corp.data.auth_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}; vertical-align:middle">{{corp.data.auth_percent|floatformat:2|intcomma}}</td>
                                                         <td class="text-center" style="color: white;background-color: {% if corp.data.orphan_count == 0 %}#00AA33{% else %}#AA0000{% endif %}";vertical-align:middle">{{corp.data.orphan_count}}</td>
                                                         {% for k, v in corp.data.service_percent.items %}<td class="text-center" style="color: white;background-color: {% if v >= 95 %}#00AA33{% elif v >= 80 %}#FF9000{% else %}#AA0000{% endif %}">{{v}}% </td>{% endfor%}
                                                         <td class="text-center" style="vertical-align:middle">{{corp.date|str2date|naturaltime}}</td>
