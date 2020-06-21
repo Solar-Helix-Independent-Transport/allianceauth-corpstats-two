@@ -44,7 +44,7 @@ corpstats change_corpstat |Can edit model | None.
 corpstats remove_corpstat | Can delete model | None.
 
 ## Usage
-Is very well documented [here](https://allianceauth.readthedocs.io/en/latest/features/corpstats/#creating-a-corp-stats)
+Is very well documented [here](https://allianceauth.readthedocs.io/en/latest/features/apps/corpstats.html?highlight=corpstats#creating-a-corp-stats)
 
 ## Contributing
 Make sure you have signed the [License Agreement](https://developers.eveonline.com/resource/license-agreement) by logging in at https://developers.eveonline.com before submitting any pull requests.
