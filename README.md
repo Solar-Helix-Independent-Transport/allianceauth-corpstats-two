@@ -33,7 +33,7 @@ Active Devs:
 ## Permissions
 If you are coming fromn the inbuilt module simply replace your perms from `corputils` with the matching `corpstats` perm
 
- Perm | Admin Site	 | Auth Site 
+Perm | Admin Site | Auth Site 
  --- | --- | --- 
 corpstats view_corp_corpstats | None | Can view corp stats of their corporation.
 corpstats view_alliance_corpstats | None | Can view corp stats of members of their alliance.
@@ -47,6 +47,14 @@ corpstats remove_corpstat | Can delete model | None.
 Is very well documented [here](https://allianceauth.readthedocs.io/en/latest/features/apps/corpstats.html?highlight=corpstats#creating-a-corp-stats)
 
 ## Contributing
-Make sure you have signed the [License Agreement](https://developers.eveonline.com/resource/license-agreement) by logging in at https://developers.eveonline.com before submitting any pull requests.
+Make sure you have signed the [License Agreement](https://developers.eveonline.com/resource/license-agreement) by logging in at https://developers.eveonline.com before submitting any pull requests. All bug fixes or features must not include extra superfluous formatting changes.
 
-Todo: Make the readme nicer!
+## Changes
+1.1.0
+ * Added service activation information
+ * Modified alliance view to show all corpstats visible to a user
+ * updated to django-esi >= 2.0.0b2
+
+1.0.4 
+ * perms fixes
+ 
