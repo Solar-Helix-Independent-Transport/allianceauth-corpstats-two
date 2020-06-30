@@ -4,17 +4,18 @@
 [![Coverage Status](https://coveralls.io/repos/github/pvyParts/allianceauth-corpstats-two/badge.svg?branch=master)](https://coveralls.io/github/pvyParts/allianceauth-corpstats-two?branch=master) [![Build Status](https://travis-ci.com/pvyParts/allianceauth-corpstats-two.svg?branch=master)](https://travis-ci.com/pvyParts/allianceauth-corpstats-two)
 
 
-Extended Corpstats module for [AllianceAuth](https://gitlab.com/allianceauth/allianceauth) with speed and functionality in mind.
+Extended Corpstats module for [AllianceAuth](https://gitlab.com/allianceauth/allianceauth) with some extra features around corp member tracking, and auth utilization.
 
 Includes:
  * Corp level views
- * Alliance Level views
+ * Corp Overview views
+ * Member Service activation stats
  * Member Tracking
    * Last Login and Duration
    * Last known ship
 
 Upcoming:
-  * Memberr Tracking
+  * Member Location Tracking
     * Last known location of members
  
 Based on the hard work of:
@@ -53,7 +54,8 @@ Make sure you have signed the [License Agreement](https://developers.eveonline.c
 1.1.0
  * Added service activation information
  * Modified alliance view to show all corpstats visible to a user
- * updated to django-esi >= 2.0.0b2
+ * updated to django-esi >= 2.0.0
+ * FA 5 update
 
 1.0.4 
  * perms fixes

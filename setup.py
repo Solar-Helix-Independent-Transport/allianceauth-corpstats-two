@@ -1,7 +1,7 @@
 import os
 from setuptools import find_packages, setup
 install_requires = [
-    'django-esi>=2.0.0b2'
+    'django-esi>=2.0.0'
 ]
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='aa-corpstats-two',
-    version='1.1.0b2',
+    version='1.1.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=install_requires,
