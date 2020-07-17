@@ -138,6 +138,7 @@ class CorpStat(models.Model):
                 "corp_name":self.corp.corporation_name,
                 "total_mains":total_mains,
                 "total_members":total_members,
+                "authd_members":len(members),
                 "auth_percent":auth_percent,
                 "service_percent":service_percent,
                 "alt_ratio":alt_ratio,
