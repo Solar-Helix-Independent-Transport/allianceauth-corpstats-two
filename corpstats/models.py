@@ -249,9 +249,9 @@ class CorpStat(models.Model):
         for service in services:
             if service in SERVICE_DB:
                 try:
-                    service_percent[service] = services_count[service]/total_mains*100
+                    service_percent[service] = {"cnt":services_count[service], "percent":services_count[service]/total_mains*100}
                 except Exception as e:
-                    service_percent[service] = 0
+                    service_percent[service] = {"cnt":services_count[service], "percent":0}
 
         return members, mains, orphans, unregistered, total_mains, total_unreg, total_members, auth_percent, alt_ratio, service_percent, tracking, services
 

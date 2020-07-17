@@ -16,11 +16,11 @@
                         {% endif %}
                         <td class="text-center col-md-4"  rowspan="2">
                             <h4>Corp Info</h4>
-                            <span style="background-color: {% if auth_percent >= 95 %}#00AA33{% elif auth_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">Authenticated: {{auth_percent|floatformat:2|intcomma}}%</span><br>
+                            <span style="background-color: {% if auth_percent >= 95 %}#00AA33{% elif auth_percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">Authenticated: {{members|length}}/{{total_members}} ({{auth_percent|floatformat:0|intcomma}}%)</span><br>
                             <span class="label label-default">Main/Alt Ratio: {{alt_ratio|floatformat:2|intcomma}}</span><br>
                             <h4>Services Active</h4>
                             {% for service, perc in service_percent.items %}
-                            <span style="background-color: {% if perc >= 95 %}#00AA33{% elif perc >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}} Activated: {{perc|floatformat:2|intcomma}}%</span><br>
+                            <span style="background-color: {% if perc.percent >= 95 %}#00AA33{% elif perc.percent >= 80 %}#FF9000{% else %}#AA0000{% endif %}" class="label label-default">{{service|title}} Activated: {{perc.cnt}}/{{ total_mains }} ({{perc.percent|floatformat:0|intcomma}}%)</span><br>
                             {% endfor %}
                         </td>
                     </tr>
@@ -66,6 +66,9 @@
                                                 <tr>
                                                     <th style="height:1em;"><!-- Must have text or height to prevent clipping --></th>
                                                     <th></th>
+                                                    {% for service in service_percent %}
+                                                    <th class="text-center">{{service|title}}</th>
+                                                    {% endfor %}
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -93,6 +96,7 @@
                                                                             <th class="text-center">{% trans "Corporation" %}</th>
                                                                             <th class="text-center">{% trans "Alliance" %}</th>
                                                                             <th class="text-center"></th>
+                                                                            
                                                                         </tr>
                                                                     {% endif %}
                                                                     <tr>
@@ -114,6 +118,9 @@
                                                                 {% endfor %}
                                                             </table>
                                                         </td>
+                                                        {% for service, active in main.services.items %}
+                                                        <td>{% if active %}Active{% else %}Inactive {% endif %}</td> 
+                                                        {% endfor %}
                                                     </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -293,16 +300,35 @@
 {% endblock %}
 {% block extra_javascript %}
     {% include 'bundles/datatables-js.html' %}
+    <script>!function(t){function e(t){var e={columns:[],columnsIdxList:[],bootstrap:!1,autoSize:!0,label:"Filter "};if("bootstrap"in t&&"boolean"==typeof t.bootstrap&&(e.bootstrap=t.bootstrap),"autoSize"in t&&"boolean"==typeof t.autoSize&&(e.autoSize=t.autoSize),"label"in t&&"string"==typeof t.label&&(e.label=t.label),"columns"in t)for(var i=0;i<t.columns.length;i++){var n=t.columns[i];if("idx"in n&&"number"==typeof n.idx){var o=n.idx;e.columns[o]={title:null,maxWidth:null,autoSize:!0},e.columnsIdxList.push(o),"title"in n&&"string"==typeof n.title&&(e.columns[o].title=n.title),"maxWidth"in n&&"string"==typeof n.maxWidth&&(e.columns[o].maxWidth=n.maxWidth),"autoSize"in n&&"boolean"==typeof n.autoSize&&(e.columns[o].autoSize=n.autoSize)}}return e}t(document).on("preInit.dt",function(i,n){if("dt"===i.namespace){var o=new t.fn.dataTable.Api(n),a=o.table().node().id,l=o.init();if("filterDropDown"in l){var r=e(l.filterDropDown);if(0!=r.columns.length){var u=o.table().container(),s=a+"_filterWrapper",c=s+" "+(r.bootstrap?"form-inline":"");t(u).prepend('<div id="'+s+'" class="'+c+'">'+r.label+"</div>"),o.columns(r.columnsIdxList).every(function(){var e=this.index(),i=null!==r.columns[e].title?r.columns[e].title:t(this.header()).html();""==i&&(i="column "+(e+1));var n="form-control "+a+"_filterSelect",o=a+"_filterSelect"+e;t("#"+s).append('<select id="'+o+'" class="'+n+'"></select>');var l=t("#"+o).empty().append('<option value="">('+i+")</option>");})}}}}),t(document).on("init.dt",function(i,n){if("dt"===i.namespace){var o=new t.fn.dataTable.Api(n),a=o.table().node().id,l=o.init();if("filterDropDown"in l){var r=e(l.filterDropDown);o.table().container();o.columns(r.columnsIdxList).every(function(){var e=this,i=e.index(),n=t("#"+(a+"_filterSelect"+i));n.on("change",function(){var i=t.fn.dataTable.util.escapeRegex(t(this).val());e.search(i?"^"+i+"$":"",!0,!1).draw()}),e.data().unique().sort().each(function(t,e){""!=t&&n.append('<option value="'+t+'">'+t+"</option>")})})}}})}(jQuery);</script>
+
 {% endblock %}
 {% block extra_css %}
     {% include 'bundles/datatables-css.html' %}
+    <style>
+    .form-control {
+        margin: 2px;
+    }
+    </style>
 {% endblock %}
 {% block extra_script %}
     $(document).ready(function(){
+        var service_cols = []
+        {% for service in service_percent %}
+        service_cols.push(1+{{forloop.counter}})
+        {% endfor %}
         $('#table-mains').DataTable({
             "columnDefs": [
                 { "sortable": false, "targets": [1] },
+                { "visible": false, "targets": service_cols }
             ],
+            "filterDropDown": {
+                columns: [{% for service in service_percent %}
+                        {
+                            idx: 1+{{ forloop.counter }}
+                        },{% endfor %}
+                        ]
+            }
         });
         $('#table-members').DataTable({
             "columnDefs": [
