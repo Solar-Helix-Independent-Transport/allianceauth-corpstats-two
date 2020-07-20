@@ -1,8 +1,11 @@
 import os
 from setuptools import find_packages, setup
+
 install_requires = [
-    'django-esi>=2.0.0'
+    'django-esi>=2.0.0',
+    'django<3.0', #Wide rule detag with AA
 ]
+
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
 
@@ -10,7 +13,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='aa-corpstats-two',
-    version='1.1.1',
+    version='1.1.2',
     packages=find_packages(),
     include_package_data=True,
     install_requires=install_requires,
@@ -33,4 +36,3 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
 )
-

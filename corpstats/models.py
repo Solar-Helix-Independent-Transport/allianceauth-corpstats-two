@@ -7,6 +7,7 @@ from allianceauth.authentication.models import CharacterOwnership, UserProfile
 from bravado.exception import HTTPForbidden
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from jsonschema.exceptions import ValidationError
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -83,9 +84,18 @@ class CorpStat(models.Model):
 
             # get ship and location names
             for t in tracking:
-                t['ship_type_name'] = esi.client.Universe.get_universe_types_type_id(type_id=t['ship_type_id']).result()['name'] #TODO use the inbuilt eve provider
+                t['ship_type_name'] = ""
+                if 'ship_type_id' in t: # non req'd esi model
+                    if t['ship_type_id'] is not None:
+                        try:
+                            t['ship_type_name'] = esi.client.Universe.get_universe_types_type_id(type_id=t['ship_type_id']).result()['name'] #TODO use the inbuilt eve provider
+                        except ValidationError as e:
+                            logger.error(e)
+                            pass  # Bad id or crappy esi call...
+
                 #locations = c.Universe.post_universe_names(ids=[t['location_id']]).result()
                 #t['location_name'] = locations[0]['name'] if locations else ''  # might be a citadel we can't know about
+
                 member_list[t['character_id']].update(t)
 
             # purge old members
@@ -276,15 +286,15 @@ class CorpMember(models.Model):
     character_id = models.PositiveIntegerField()
     character_name = models.CharField(max_length=50)  # allegedly
 
-    location_id = models.BigIntegerField()
-    location_name = models.CharField(blank=True, null=True, max_length=150)  # this was counted
+    location_id = models.BigIntegerField(null=True, default=None)
+    location_name = models.CharField(blank=True, null=True, default=None, max_length=150)  # this was counted
 
-    ship_type_id = models.PositiveIntegerField()
-    ship_type_name = models.CharField(max_length=42)  # this was also counted
+    ship_type_id = models.PositiveIntegerField(null=True, default=None)
+    ship_type_name = models.CharField(max_length=42, null=True, default=None)  # this was also counted
 
-    start_date = models.DateTimeField()
-    logon_date = models.DateTimeField()
-    logoff_date = models.DateTimeField()
+    start_date = models.DateTimeField(null=True, default=None)
+    logon_date = models.DateTimeField(null=True, default=None)
+    logoff_date = models.DateTimeField(null=True, default=None)
 
     base_id = models.PositiveIntegerField(blank=True, null=True)
 

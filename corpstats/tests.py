@@ -12,6 +12,7 @@ from django.contrib.auth.models import User, Permission
 from allianceauth.authentication.models import CharacterOwnership
 from django.core.cache import cache
 from .provider import esi
+from jsonschema.exceptions import ValidationError
 
 class CorpStatsManagerTestCase(TestCase):
     @classmethod
@@ -133,6 +134,17 @@ class CorpStatsUpdateTestCase(TestCase):
         self.assertTrue(CorpMember.objects.filter(character_id=1, character_name='test character', corpstats=self.corpstat).exists())
 
     @mock.patch('esi.clients.SwaggerClient')
+    def test_update_add_no_extras(self, SwaggerClient):
+        SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
+        SwaggerClient.return_value.Corporation.get_corporations_corporation_id_membertracking.return_value.result.return_value = [
+            {'character_id': 2, 'ship_type_id': None, 'logon_date': now(), 'logoff_date': now(), 'start_date': now()}]
+        SwaggerClient.return_value.Universe.get_universe_types_type_id.return_value.result.side_effect = ValidationError("Test Failure")
+        SwaggerClient.return_value.Universe.post_universe_names.return_value.result.return_value = [{'id': 2, 'name': 'test character none', 'category':'character'}]
+
+        self.corpstat.update()
+        self.assertTrue(CorpMember.objects.filter(character_id=2, character_name='test character none', corpstats=self.corpstat).exists())
+
+    @mock.patch('esi.clients.SwaggerClient')
     def test_update_remove_member(self, SwaggerClient):
         CorpMember.objects.create(character_id='2', character_name='old test character', corpstats=self.corpstat, location_id=1, location_name='test', ship_type_id=1, ship_type_name='test', logoff_date=now(), logon_date=now(), start_date=now())
         SwaggerClient.return_value.Character.get_characters_character_id.return_value.result.return_value = {'corporation_id': 2}
@@ -177,7 +189,7 @@ class CorpStatsPropertiesTestCase(TestCase):
         cls.user.profile.refresh_from_db()
         cls.token = Token.objects.create(user=cls.user, access_token='a', character_id='1', character_name='test character', character_owner_hash='z')
         cls.alliance = EveAllianceInfo.objects.create(alliance_id=3, alliance_name='test alliance', alliance_ticker='TEST', executor_corp_id=2)
-        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance_id=3, member_count=1)
+        cls.corp = EveCorporationInfo.objects.create(corporation_id=2, corporation_name='test corp', corporation_ticker='TEST', alliance_id=cls.alliance.id, member_count=1)
         cls.corp.alliance = cls.alliance
         cls.corp.save()
         cls.corpstat = CorpStat.objects.create(token=cls.token, corp=cls.corp)
