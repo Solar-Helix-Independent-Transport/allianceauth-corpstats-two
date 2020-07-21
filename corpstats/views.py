@@ -102,8 +102,8 @@ def corpstat_view(request, corp_id=None):
         # get their main corp if available
         try:
             corpstats = available.get(corp__corporation_id=request.user.profile.main_character.corporation_id)
-        except CorpStats.DoesNotExist:
-            pass
+        except ObjectDoesNotExist:
+            corpstats = available[0]
 
     context = {
         'available': available # list what stats are visible to user
