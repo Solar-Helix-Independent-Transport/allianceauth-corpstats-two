@@ -5,7 +5,8 @@ from .models import CorpStat
 @shared_task
 def update_corpstats(pk):
     cs = CorpStat.objects.get(pk=pk)
-    cs.update()
+    cs.update() # update
+    cs.get_and_cache_stats() # re-cache
 
 
 @shared_task

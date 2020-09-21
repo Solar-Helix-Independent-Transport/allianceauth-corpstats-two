@@ -82,7 +82,8 @@ class CorpStat(models.Model):
                 for name in name_chunk:
                     member_list[name['id']]['character_name'] = name.get('name', "")
 
-            # get ship and location names
+            # get ship and location names  
+            # TODO make this fast!
             for t in tracking:
                 t['ship_type_name'] = ""
                 if 'ship_type_id' in t: # non req'd esi model

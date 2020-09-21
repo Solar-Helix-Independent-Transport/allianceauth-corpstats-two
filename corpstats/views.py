@@ -158,9 +158,9 @@ def corpstats_search(request):
             for s in similar:
                 results.append((corpstats, s))
         results = sorted(results, key=lambda x: x[1].character_name)
+        available = CorpStat.objects.visible_to(request.user).order_by('corp__corporation_name').select_related('corp')
         context = {
-            'available_corps': CorpStat.objects.visible_to(request.user),
-            'available_alliances': CorpStat.objects.alliances_visible_to(request.user),
+            'available': available, # list what stats are visible to user
             'results': results,
             'search_string': search_string,
         }
