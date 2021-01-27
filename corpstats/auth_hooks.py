@@ -15,7 +15,7 @@ class CorpStats(MenuItemHook):
     def render(self, request):
         if request.user.has_perm('corpstats.view_corp_corpstats') or request.user.has_perm(
                 'corpstats.view_alliance_corpstats') or request.user.has_perm(
-                'corpstats.add_corpstats') or request.user.has_perm('corpstats.view_state_corpstats'):
+                'corpstats.add_corpstat') or request.user.has_perm('corpstats.view_state_corpstats'):
             return MenuItemHook.render(self, request)
         return ''
 
