@@ -1,44 +1,23 @@
-{% extends 'allianceauth/base.html' %}
+{% extends 'allianceauth/base-bs5.html' %}
+
 {% load i18n %}
-{% block page_title %}{% trans "Corporation Member Data" %}{% endblock %}
+{% load evelinks %}
+
+{% block page_title %}{% translate "Corporation Member Data" %}{% endblock %}
+
+{% block header_nav_collapse_left %}
+    {% include "corpstat/navigation.html" %}
+{% endblock %}
+
+{% block header_nav_collapse_right %}
+    {% include "corpstat/menu-search-corporation.html" with suffix="menu" %}
+{% endblock %}
+
 {% block content %}
-    <div class="col-lg-12">
-        <h1 class="page-header text-center">{% trans "Corporation Member Data" %}</h1>
-        <div class="col-lg-10 col-lg-offset-1 container">
-            <nav class="navbar navbar-default">
-                <div class="container-fluid">
-                    <ul class="nav navbar-nav">
-                        {% if available %}
-                            <li class="dropdown">
-                                <a href="#" id="dLabel" class="dropdown-toggle" role="button" data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">{% trans "Corporations" %}<span class="caret"></span></a>
-                                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                                    {% for corpstat in available %}
-                                        <li>
-                                            <a href="{% url 'corpstat:view_corp' corpstat.corp.corporation_id %}">{{ corpstat.corp.corporation_name }}</a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                        {% endif %}
-                        {% if available.count > 1 %}
-                            <li>
-                                <a href="{% url 'corpstat:view_all' %}">{% trans "View All" %}</a>
-                            </li>
-                        {% endif %}
-                        {% if perms.corpstats.add_corpstat %}
-                            <li>
-                                <a href="{% url 'corpstat:add' %}">{% trans "Add" %}</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                    <form class="navbar-form navbar-right" role="search" action="{% url 'corpstat:search' %}" method="GET">
-                        <div class="form-group">
-                            <input type="text" class="form-control" name="search_string" placeholder="{% if search_string %}{{ search_string }}{% else %}{% trans "Search all corporations..." %}{% endif %}">
-                        </div>
-                    </form>
-                </div>
-            </nav>
-            {% block member_data %}{% endblock %}
-        </div>
+    <div class="aa-corpstats">
+        {% translate "Corporation Member Data" as site_title %}
+        {% include "framework/header/page-header.html" with title=site_title %}
+
+        {% block member_data %}{% endblock %}
     </div>
 {% endblock %}

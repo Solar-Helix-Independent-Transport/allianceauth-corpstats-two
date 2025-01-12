@@ -1,0 +1,36 @@
+{% load navactive %}
+{% load evelinks %}
+{% load i18n %}
+
+{% if available %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            {% translate "Corporations" %}
+        </a>
+
+        <ul class="dropdown-menu clearfix" role="menu">
+            {% for corpstat in available %}
+                <li>
+                    <a
+                        class="dropdown-item"
+                        href="{% url 'corpstat:view_corp' corpstat.corp.corporation_id %}"
+                    >
+                        {{ corpstat.corp.corporation_name }}
+                </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endif %}
+
+{% if available.count > 1 %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'corpstat:view_all' %}">{% translate "View All" %}</a>
+    </li>
+{% endif %}
+
+{% if perms.corpstats.add_corpstat %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'corpstat:add' %}">{% translate "Add" %}</a>
+    </li>
+{% endif %}
