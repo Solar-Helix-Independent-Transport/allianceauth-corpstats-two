@@ -10,7 +10,9 @@
 {% endblock %}
 
 {% block header_nav_collapse_right %}
-    {% include "corpstat/menu-search-corporation.html" with suffix="menu" %}
+    <li role="presentation" class="nav-item">
+        {% include "corpstat/menu-search-corporation.html" with suffix="menu" %}
+    </li>
 {% endblock %}
 
 {% block content %}
